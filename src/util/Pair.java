@@ -1,27 +1,12 @@
 package util;
 
 /**
- * Generic immutable pair utility.
- * Used for returning two related values together (e.g., exercise name + best weight).
+ * Generic interface for a key-value pair.
  *
- * @param <A> type of the first element
- * @param <B> type of the second element
+ * @param <K> type of the key
+ * @param <V> type of the value
  */
-public class Pair<A, B> {
-
-    private final A first;
-    private final B second;
-
-    public Pair(A first, B second) {
-        this.first = first;
-        this.second = second;
-    }
-
-    public A getFirst() { return first; }
-    public B getSecond() { return second; }
-
-    @Override
-    public String toString() {
-        return "(" + first + ", " + second + ")";
-    }
+public interface Pair<K, V> {
+    public K getKey();
+    public V getValue();
 }

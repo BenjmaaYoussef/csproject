@@ -4,10 +4,9 @@ import exception.WorkoutNotFoundException;
 import model.*;
 import util.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.TreeMap;
 
 /**
  * Entry point for the Workout Tracker console application.
@@ -180,14 +179,15 @@ public class Main {
     // ------------------------------------------------------------------ Option 5: Personal records
 
     private static void viewPersonalRecords() {
-        TreeMap<String, Double> records = manager.getAllPersonalRecords();
+        ArrayList<Pair<String, Double>> records = manager.getAllPersonalRecords();
         if (records.isEmpty()) {
             System.out.println("No personal records yet. Log sessions with weighted exercises first.");
             return;
         }
         System.out.println("\n--- Personal Records (best weight per exercise) ---");
-        for (Map.Entry<String, Double> entry : records.entrySet()) {
-            System.out.printf("  %-20s %.1f kg%n", entry.getKey(), entry.getValue());
+        for (int i = 0; i < records.size(); i++) {
+            Pair<String, Double> pr = records.get(i);
+            System.out.printf("  %-20s %.1f kg%n", pr.getKey(), pr.getValue());
         }
 
         System.out.println("\nLook up a specific record? (1=Yes, 0=No)");
@@ -197,7 +197,7 @@ public class Main {
             if (pr == null) {
                 System.out.println("No record found for \"" + name + "\".");
             } else {
-                System.out.printf("Best for %s: %.1f kg%n", pr.getFirst(), pr.getSecond());
+                System.out.printf("Best for %s: %.1f kg%n", pr.getKey(), pr.getValue());
             }
         }
     }
