@@ -5,12 +5,11 @@ import exception.DuplicateExerciseException;
 import java.util.ArrayList;
 
 /**
- * Represents one workout session on a specific date.
- * A session contains a list of exercises and optional notes.
+ * Represents a single workout session on a given date.
  */
-public class WorkoutSession {
+public class WorkoutSession implements Comparable<WorkoutSession> {
 
-    private String date;          // format: yyyy-MM-dd
+    private String date;   // format: yyyy-MM-dd
     private ArrayList<Exercise> exercises;
     private String notes;
 
@@ -22,26 +21,27 @@ public class WorkoutSession {
 
     /**
      * Adds an exercise to this session.
-     * Throws DuplicateExerciseException if an exercise with the same name already exists.
+     * @throws DuplicateExerciseException if an exercise with the same name already exists
      */
-    public void addExercise(Exercise exercise) throws DuplicateExerciseException {
-        for (Exercise e : exercises) {
-            if (e.getName().equalsIgnoreCase(exercise.getName())) {
-                throw new DuplicateExerciseException(exercise.getName());
+    public void addExercise(Exercise e) throws DuplicateExerciseException {
+        for (Exercise existing : exercises) {
+            if (existing.getName().equalsIgnoreCase(e.getName())) {
+                throw new DuplicateExerciseException(e.getName());
             }
         }
-        exercises.add(exercise);
+        exercises.add(e);
     }
 
     /**
-     * Removes an exercise by name (case-insensitive).
-     * Returns true if removed, false if not found.
+     * Removes an exercise by name (case-insensitive). No-op if not found.
      */
-    public boolean removeExercise(String name) {
-        return exercises.removeIf(e -> e.getName().equalsIgnoreCase(name));
+    public void removeExercise(String name) {
+        exercises.removeIf(e -> e.getName().equalsIgnoreCase(name));
     }
 
-    // ---------- Getters / Setters ----------
+    public ArrayList<Exercise> getExercises() {
+        return exercises;
+    }
 
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
@@ -49,20 +49,24 @@ public class WorkoutSession {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
-    public ArrayList<Exercise> getExercises() { return exercises; }
+    /** Natural order: chronological by date string (yyyy-MM-dd sorts correctly lexicographically). */
+    @Override
+    public int compareTo(WorkoutSession other) {
+        return this.date.compareTo(other.date);
+    }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("=== Workout Session: ").append(date).append(" ===\n");
+        sb.append("=== Workout [").append(date).append("] ===\n");
         if (notes != null && !notes.isEmpty()) {
             sb.append("Notes: ").append(notes).append("\n");
         }
         if (exercises.isEmpty()) {
-            sb.append("  (no exercises logged)\n");
+            sb.append("  (no exercises)\n");
         } else {
-            for (int i = 0; i < exercises.size(); i++) {
-                sb.append("  ").append(i + 1).append(". ").append(exercises.get(i)).append("\n");
+            for (Exercise e : exercises) {
+                sb.append("  • ").append(e).append("\n");
             }
         }
         return sb.toString();
