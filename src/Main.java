@@ -1,3 +1,4 @@
+import db.WorkoutSessionDAO;
 import exception.DuplicateExerciseException;
 import exception.InvalidExerciseException;
 import exception.WorkoutNotFoundException;
@@ -9,10 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- * Entry point for the Workout Tracker console application.
- * Phase 3: File Handling
- */
 public class Main {
 
     private static WorkoutManager manager;
@@ -20,7 +17,7 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("╔══════════════════════════════╗");
-        System.out.println("║     Workout Tracker v4.0     ║");
+        System.out.println("║     Workout Tracker v5.0     ║");
         System.out.println("╚══════════════════════════════╝");
 
         manager = setupUser();
@@ -44,6 +41,9 @@ public class Main {
                 case 7  -> viewUserProfile();
                 case 8  -> exportReport();
                 case 9  -> exportXML();
+                case 10 -> saveSessionsToDB();
+                case 11 -> loadSessionsFromDB();
+                case 12 -> deleteSessionFromDB();
                 case 0  -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }
@@ -77,6 +77,10 @@ public class Main {
         System.out.println(" 7. View user profile");
         System.out.println(" 8. Export report to file");
         System.out.println(" 9. Export sessions to XML");
+        System.out.println("--- Database ---");
+        System.out.println("10. Save all sessions to database");
+        System.out.println("11. Load sessions from database");
+        System.out.println("12. Delete a session from database");
         System.out.println(" 0. Exit");
         System.out.println("==============================");
     }
@@ -236,6 +240,53 @@ public class Main {
 
     private static void exportXML() {
         FileManager.exportXML(manager.getAllSessions());
+    }
+
+    // ------------------------------------------------------------------ Option 10: Save to DB
+
+    private static void saveSessionsToDB() {
+        ArrayList<WorkoutSession> sessions = manager.getAllSessions();
+        if (sessions.isEmpty()) {
+            System.out.println("No sessions to save.");
+            return;
+        }
+        WorkoutSessionDAO dao = new WorkoutSessionDAO();
+        int saved = 0;
+        for (int i = 0; i < sessions.size(); i++) {
+            int result = dao.saveSession(sessions.get(i));
+            if (result == 1) {
+                saved++;
+            }
+        }
+        System.out.println(saved + " session(s) saved to database.");
+    }
+
+    // ------------------------------------------------------------------ Option 11: Load from DB
+
+    private static void loadSessionsFromDB() {
+        WorkoutSessionDAO dao = new WorkoutSessionDAO();
+        ArrayList<WorkoutSession> sessions = dao.getAllSessions();
+        if (sessions.isEmpty()) {
+            System.out.println("No sessions found in database.");
+            return;
+        }
+        System.out.println("\n--- Sessions loaded from database ---");
+        for (int i = 0; i < sessions.size(); i++) {
+            System.out.println(sessions.get(i));
+        }
+    }
+
+    // ------------------------------------------------------------------ Option 12: Delete from DB
+
+    private static void deleteSessionFromDB() {
+        String date = readString("Enter date of session to delete (yyyy-MM-dd): ");
+        WorkoutSessionDAO dao = new WorkoutSessionDAO();
+        int result = dao.deleteSession(date);
+        if (result == 1) {
+            System.out.println("Session deleted successfully.");
+        } else {
+            System.out.println("No session found for date: " + date);
+        }
     }
 
     // ------------------------------------------------------------------ Input helpers

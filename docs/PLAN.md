@@ -56,12 +56,14 @@ Entry point:
 ---
 
 ### Phase 5 – Database (Chapter 6)
-**Goal:** Store all data in an SQLite database using JDBC.
+**Goal:** Store all data in a MySQL database using JDBC (MySQL Connector/J 9.x).
 
-Tables: `users`, `exercises`, `workout_sessions`, `session_exercises`
-- Full CRUD operations via `DBManager`
-- Prepared statements to prevent SQL injection
-- Transactions for session saves
+Tables: `workout_sessions`, `session_exercises`
+- `DatabaseUtility` class: static `getConnection()` loads `com.mysql.cj.jdbc.Driver` via `Class.forName`
+- `WorkoutSessionDAO` class: static URL/USER_NAME/PASSWORD, full CRUD via `PreparedStatement`
+- Transactions (`setAutoCommit(false)` / `commit()` / `rollback()`) for session saves
+- Resources closed explicitly in `finally` blocks (ResultSet → Statement → Connection)
+- SQL script: `workout_tracker.sql` creates the database and tables
 
 ---
 

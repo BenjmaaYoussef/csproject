@@ -51,6 +51,9 @@ src/
     Pair.java
     OrderedPair.java
     FileManager.java          – Phase 3: FileWriter + Scanner(File)
+  db/
+    DatabaseUtility.java      – Phase 5: static getConnection() via Class.forName
+    WorkoutSessionDAO.java    – Phase 5: CRUD for workout_sessions + session_exercises
 ```
 
 ## Current progress
@@ -58,7 +61,7 @@ src/
 - Phase 2 (Collections & Generics): DONE
 - Phase 3 (File Handling): DONE — `FileManager.java` handles save/load/export
 - Phase 4 (Serialization): DONE — binary via ObjectOutputStream/ObjectInputStream (workouts.bin), XML via XMLEncoder (workouts.xml)
-- Phase 5 (Database): TODO
+- Phase 5 (Database): DONE — MySQL via JDBC; `DatabaseUtility` + `WorkoutSessionDAO` in `src/db/`; run `workout_tracker.sql` first; driver: `mysql-connector-j-9.6.0/mysql-connector-j-9.6.0.jar`
 - Phase 6 (Client-Server): TODO
 
 ## Data files (Phase 3)
