@@ -1,13 +1,11 @@
 package model;
 
 import exception.InvalidExerciseException;
+import java.io.Serializable;
 
-/**
- * Represents a single exercise in a workout session.
- * For CARDIO exercises, sets/reps are typically 0 and durationMin is used.
- * For STRENGTH exercises, durationMin can be 0.
- */
-public class Exercise {
+public class Exercise implements Serializable {
+
+    private static final long serialVersionUID = 1;
 
     private String name;
     private int sets;
@@ -15,6 +13,11 @@ public class Exercise {
     private double weightKg;
     private int durationMin;
     private ExerciseType type;
+
+    public Exercise() {
+        this.name = "default";
+        this.type = ExerciseType.STRENGTH;
+    }
 
     public Exercise(String name, int sets, int reps, double weightKg,
                     int durationMin, ExerciseType type) throws InvalidExerciseException {

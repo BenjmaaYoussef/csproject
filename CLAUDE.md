@@ -57,7 +57,7 @@ src/
 - Phase 1 (Exceptions + Models): DONE
 - Phase 2 (Collections & Generics): DONE
 - Phase 3 (File Handling): DONE — `FileManager.java` handles save/load/export
-- Phase 4 (Serialization): TODO
+- Phase 4 (Serialization): DONE — binary via ObjectOutputStream/ObjectInputStream (workouts.bin), XML via XMLEncoder (workouts.xml)
 - Phase 5 (Database): TODO
 - Phase 6 (Client-Server): TODO
 

@@ -7,10 +7,18 @@ import model.ExerciseType;
 import model.WorkoutManager;
 import model.WorkoutSession;
 
+import java.beans.XMLDecoder;
+import java.beans.XMLEncoder;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -24,8 +32,10 @@ import java.util.Scanner;
  */
 public class FileManager {
 
-    private static final String WORKOUTS_FILE = "workouts.txt";
-    private static final String REPORT_FILE   = "report.txt";
+    private static final String WORKOUTS_FILE  = "workouts.txt";
+    private static final String REPORT_FILE    = "report.txt";
+    private static final String BINARY_FILE    = "workouts.bin";
+    private static final String XML_FILE       = "workouts.xml";
 
     // ------------------------------------------------------------------ Save
 
@@ -95,6 +105,58 @@ public class FileManager {
             System.err.println("Error reading exercise data: " + e.getMessage());
         }
         return sessions;
+    }
+
+    // ------------------------------------------------------------------ Binary save
+
+    public static void saveBinary(ArrayList<WorkoutSession> sessions) {
+        try {
+            FileOutputStream fo = new FileOutputStream(BINARY_FILE);
+            ObjectOutputStream os = new ObjectOutputStream(fo);
+            os.writeObject(sessions);
+            os.close();
+            fo.close();
+            System.out.println("Sessions saved to " + BINARY_FILE + ".");
+        } catch (Exception e) {
+            System.err.println("An error occurred while saving (binary).");
+            e.printStackTrace();
+        }
+    }
+
+    // ------------------------------------------------------------------ Binary load
+
+    public static ArrayList<WorkoutSession> loadBinary() {
+        ArrayList<WorkoutSession> sessions = new ArrayList<>();
+        File file = new File(BINARY_FILE);
+        if (!file.exists()) {
+            return sessions;
+        }
+        try {
+            FileInputStream fi = new FileInputStream(BINARY_FILE);
+            ObjectInputStream ois = new ObjectInputStream(fi);
+            sessions = (ArrayList<WorkoutSession>) ois.readObject();
+            ois.close();
+            fi.close();
+            System.out.println("Loaded " + sessions.size() + " session(s) from " + BINARY_FILE + ".");
+        } catch (Exception e) {
+            System.err.println("An error occurred while loading (binary).");
+            e.printStackTrace();
+        }
+        return sessions;
+    }
+
+    // ------------------------------------------------------------------ XML export
+
+    public static void exportXML(ArrayList<WorkoutSession> sessions) {
+        try {
+            XMLEncoder encoder = new XMLEncoder(new BufferedOutputStream(new FileOutputStream(XML_FILE)));
+            encoder.writeObject(sessions);
+            encoder.close();
+            System.out.println("Sessions exported to " + XML_FILE + ".");
+        } catch (Exception e) {
+            System.err.println("An error occurred while exporting to XML.");
+            e.printStackTrace();
+        }
     }
 
     // ------------------------------------------------------------------ Export report

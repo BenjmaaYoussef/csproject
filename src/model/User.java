@@ -1,14 +1,19 @@
 package model;
 
-/**
- * Represents the app user whose workouts are being tracked.
- */
-public class User {
+import java.io.Serializable;
+
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 1;
 
     private String name;
     private int age;
     private double weightKg;
     private double heightCm;
+
+    public User() {
+        this.name = "";
+    }
 
     public User(String name, int age, double weightKg, double heightCm) {
         this.name = name;

@@ -20,12 +20,12 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("╔══════════════════════════════╗");
-        System.out.println("║     Workout Tracker v3.0     ║");
+        System.out.println("║     Workout Tracker v4.0     ║");
         System.out.println("╚══════════════════════════════╝");
 
         manager = setupUser();
 
-        ArrayList<WorkoutSession> saved = FileManager.loadSessions();
+        ArrayList<WorkoutSession> saved = FileManager.loadBinary();
         for (WorkoutSession s : saved) {
             manager.addSession(s);
         }
@@ -43,6 +43,7 @@ public class Main {
                 case 6  -> viewSummary();
                 case 7  -> viewUserProfile();
                 case 8  -> exportReport();
+                case 9  -> exportXML();
                 case 0  -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }
@@ -75,6 +76,7 @@ public class Main {
         System.out.println(" 6. View summary");
         System.out.println(" 7. View user profile");
         System.out.println(" 8. Export report to file");
+        System.out.println(" 9. Export sessions to XML");
         System.out.println(" 0. Exit");
         System.out.println("==============================");
     }
@@ -109,7 +111,7 @@ public class Main {
 
         manager.addSession(session);
         System.out.println("Session saved for " + date + " with " + session.getExercises().size() + " exercise(s).");
-        FileManager.saveSessions(manager.getAllSessions());
+        FileManager.saveBinary(manager.getAllSessions());
     }
 
     private static Exercise promptExercise() throws InvalidExerciseException {
@@ -228,6 +230,12 @@ public class Main {
 
     private static void exportReport() {
         FileManager.exportReport(manager);
+    }
+
+    // ------------------------------------------------------------------ Option 9: Export to XML
+
+    private static void exportXML() {
+        FileManager.exportXML(manager.getAllSessions());
     }
 
     // ------------------------------------------------------------------ Input helpers

@@ -1,17 +1,22 @@
 package model;
 
 import exception.DuplicateExerciseException;
-
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Represents a single workout session on a given date.
- */
-public class WorkoutSession implements Comparable<WorkoutSession> {
+public class WorkoutSession implements Comparable<WorkoutSession>, Serializable {
 
-    private String date;   // format: yyyy-MM-dd
+    private static final long serialVersionUID = 1;
+
+    private String date;
     private ArrayList<Exercise> exercises;
     private String notes;
+
+    public WorkoutSession() {
+        this.date = "";
+        this.notes = "";
+        this.exercises = new ArrayList<>();
+    }
 
     public WorkoutSession(String date, String notes) {
         this.date = date;
@@ -41,6 +46,10 @@ public class WorkoutSession implements Comparable<WorkoutSession> {
 
     public ArrayList<Exercise> getExercises() {
         return exercises;
+    }
+
+    public void setExercises(ArrayList<Exercise> exercises) {
+        this.exercises = exercises;
     }
 
     public String getDate() { return date; }
