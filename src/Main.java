@@ -2,6 +2,7 @@ import exception.DuplicateExerciseException;
 import exception.InvalidExerciseException;
 import exception.WorkoutNotFoundException;
 import model.*;
+import util.FileManager;
 import util.Pair;
 
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.Scanner;
 
 /**
  * Entry point for the Workout Tracker console application.
- * Phase 2: Collections & Generics
+ * Phase 3: File Handling
  */
 public class Main {
 
@@ -19,10 +20,15 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("╔══════════════════════════════╗");
-        System.out.println("║     Workout Tracker v2.0     ║");
+        System.out.println("║     Workout Tracker v3.0     ║");
         System.out.println("╚══════════════════════════════╝");
 
         manager = setupUser();
+
+        ArrayList<WorkoutSession> saved = FileManager.loadSessions();
+        for (WorkoutSession s : saved) {
+            manager.addSession(s);
+        }
 
         boolean running = true;
         while (running) {
@@ -36,6 +42,7 @@ public class Main {
                 case 5  -> viewPersonalRecords();
                 case 6  -> viewSummary();
                 case 7  -> viewUserProfile();
+                case 8  -> exportReport();
                 case 0  -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }
@@ -67,6 +74,7 @@ public class Main {
         System.out.println(" 5. View personal records");
         System.out.println(" 6. View summary");
         System.out.println(" 7. View user profile");
+        System.out.println(" 8. Export report to file");
         System.out.println(" 0. Exit");
         System.out.println("==============================");
     }
@@ -101,6 +109,7 @@ public class Main {
 
         manager.addSession(session);
         System.out.println("Session saved for " + date + " with " + session.getExercises().size() + " exercise(s).");
+        FileManager.saveSessions(manager.getAllSessions());
     }
 
     private static Exercise promptExercise() throws InvalidExerciseException {
@@ -213,6 +222,12 @@ public class Main {
     private static void viewUserProfile() {
         System.out.println("\n--- User Profile ---");
         System.out.println(manager.getUser());
+    }
+
+    // ------------------------------------------------------------------ Option 8: Export report
+
+    private static void exportReport() {
+        FileManager.exportReport(manager);
     }
 
     // ------------------------------------------------------------------ Input helpers
