@@ -54,6 +54,9 @@ src/
   db/
     DatabaseUtility.java      – Phase 5: static getConnection() via Class.forName
     WorkoutSessionDAO.java    – Phase 5: CRUD for workout_sessions + session_exercises
+  network/
+    WorkoutServer.java        – Phase 6: ServerSocket on port 9876, handles GET_SESSIONS / ADD_SESSION / EXIT
+    WorkoutClient.java        – Phase 6: Socket client, standalone menu + sendAndReceive() reused by Main
 ```
 
 ## Current progress
@@ -62,7 +65,7 @@ src/
 - Phase 3 (File Handling): DONE — `FileManager.java` handles save/load/export
 - Phase 4 (Serialization): DONE — binary via ObjectOutputStream/ObjectInputStream (workouts.bin), XML via XMLEncoder (workouts.xml)
 - Phase 5 (Database): DONE — MySQL via JDBC; `DatabaseUtility` + `WorkoutSessionDAO` in `src/db/`; run `workout_tracker.sql` first; driver: `mysql-connector-j-9.6.0/mysql-connector-j-9.6.0.jar`
-- Phase 6 (Client-Server): TODO
+- Phase 6 (Client-Server): DONE — TCP sockets; `WorkoutServer` + `WorkoutClient` in `src/network/`; text protocol (GET_SESSIONS, ADD_SESSION, EXIT) via DataInputStream/DataOutputStream
 
 ## Data files (Phase 3)
 - `workouts.txt` — pipe-delimited session data, written by `FileManager.saveSessions()`, read by `FileManager.loadSessions()`

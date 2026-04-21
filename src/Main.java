@@ -3,6 +3,7 @@ import exception.DuplicateExerciseException;
 import exception.InvalidExerciseException;
 import exception.WorkoutNotFoundException;
 import model.*;
+import network.WorkoutClient;
 import util.FileManager;
 import util.Pair;
 
@@ -17,7 +18,7 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("╔══════════════════════════════╗");
-        System.out.println("║     Workout Tracker v5.0     ║");
+        System.out.println("║     Workout Tracker v6.0     ║");
         System.out.println("╚══════════════════════════════╝");
 
         manager = setupUser();
@@ -44,6 +45,8 @@ public class Main {
                 case 10 -> saveSessionsToDB();
                 case 11 -> loadSessionsFromDB();
                 case 12 -> deleteSessionFromDB();
+                case 13 -> fetchSessionsFromServer();
+                case 14 -> sendSessionToServer();
                 case 0  -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }
@@ -81,6 +84,9 @@ public class Main {
         System.out.println("10. Save all sessions to database");
         System.out.println("11. Load sessions from database");
         System.out.println("12. Delete a session from database");
+        System.out.println("--- Client-Server ---");
+        System.out.println("13. Fetch all sessions from server");
+        System.out.println("14. Send a session to server");
         System.out.println(" 0. Exit");
         System.out.println("==============================");
     }
@@ -287,6 +293,41 @@ public class Main {
         } else {
             System.out.println("No session found for date: " + date);
         }
+    }
+
+    // ------------------------------------------------------------------ Option 13: Fetch from server
+
+    private static void fetchSessionsFromServer() {
+        System.out.println("\n--- Fetching sessions from server ---");
+        WorkoutClient.sendAndReceive("GET_SESSIONS");
+    }
+
+    // ------------------------------------------------------------------ Option 14: Send session to server
+
+    private static void sendSessionToServer() {
+        System.out.println("\n--- Send session to server ---");
+        String date  = readString("Date (yyyy-MM-dd): ");
+        String notes = readString("Notes (or press Enter to skip): ");
+        StringBuilder sb = new StringBuilder();
+        sb.append("SESSION|").append(date).append("|").append(notes);
+        boolean addingExercises = true;
+        while (addingExercises) {
+            System.out.println("\n  Add exercise? (1=Yes, 0=Done)");
+            int choice = readInt("  > ");
+            if (choice != 1) {
+                addingExercises = false;
+                continue;
+            }
+            try {
+                Exercise e = promptExercise();
+                sb.append("\nEXERCISE|").append(e.getName()).append("|").append(e.getType().name())
+                  .append("|").append(e.getSets()).append("|").append(e.getReps())
+                  .append("|").append(e.getWeightKg()).append("|").append(e.getDurationMin());
+            } catch (InvalidExerciseException ex) {
+                System.out.println("  Error: " + ex.getMessage());
+            }
+        }
+        WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
     }
 
     // ------------------------------------------------------------------ Input helpers
