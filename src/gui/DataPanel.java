@@ -202,10 +202,11 @@ public class DataPanel extends JPanel {
             log("No sessions to save.");
             return;
         }
+        String userName = manager.getUser().getName();
         WorkoutSessionDAO dao = new WorkoutSessionDAO();
         int saved = 0;
         for (int i = 0; i < sessions.size(); i++) {
-            if (dao.saveSession(sessions.get(i)) == 1) {
+            if (dao.saveSession(sessions.get(i), userName) == 1) {
                 saved++;
             }
         }
@@ -213,8 +214,9 @@ public class DataPanel extends JPanel {
     }
 
     private void loadFromDB() {
+        String userName = manager.getUser().getName();
         WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        ArrayList<WorkoutSession> sessions = dao.getAllSessions();
+        ArrayList<WorkoutSession> sessions = dao.getAllSessions(userName);
         for (WorkoutSession s : sessions) {
             manager.addSession(s);
         }
@@ -227,8 +229,9 @@ public class DataPanel extends JPanel {
             "Enter session date to delete (yyyy-MM-dd):", "Delete from DB",
             JOptionPane.QUESTION_MESSAGE);
         if (date == null || date.trim().isEmpty()) return;
+        String userName = manager.getUser().getName();
         WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        int result = dao.deleteSession(date.trim());
+        int result = dao.deleteSession(date.trim(), userName);
         if (result == 1) {
             log("Deleted session for " + date + " from database.");
         } else {

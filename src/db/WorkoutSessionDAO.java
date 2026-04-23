@@ -15,7 +15,7 @@ public class WorkoutSessionDAO {
     private static final String USER_NAME = "root";
     private static final String PASSWORD  = "3152005medA";
 
-    public int saveSession(WorkoutSession session) {
+    public int saveSession(WorkoutSession session, String userName) {
         Connection connection = null;
         PreparedStatement insertSessionStmt = null;
         PreparedStatement insertExerciseStmt = null;
@@ -25,10 +25,11 @@ public class WorkoutSessionDAO {
             connection = DatabaseUtility.getConnection(URL, USER_NAME, PASSWORD);
             connection.setAutoCommit(false);
 
-            String sessionQuery = "INSERT INTO workout_sessions (session_date, notes) VALUES (?, ?)";
+            String sessionQuery = "INSERT INTO workout_sessions (user_name, session_date, notes) VALUES (?, ?, ?)";
             insertSessionStmt = connection.prepareStatement(sessionQuery, Statement.RETURN_GENERATED_KEYS);
-            insertSessionStmt.setString(1, session.getDate());
-            insertSessionStmt.setString(2, session.getNotes());
+            insertSessionStmt.setString(1, userName);
+            insertSessionStmt.setString(2, session.getDate());
+            insertSessionStmt.setString(3, session.getNotes());
             insertSessionStmt.executeUpdate();
 
             generatedKeys = insertSessionStmt.getGeneratedKeys();
@@ -82,7 +83,7 @@ public class WorkoutSessionDAO {
         return rowsUpdated;
     }
 
-    public ArrayList<WorkoutSession> getAllSessions() {
+    public ArrayList<WorkoutSession> getAllSessions(String userName) {
         Connection connection = null;
         PreparedStatement selectStatement = null;
         ResultSet rs = null;
@@ -95,9 +96,11 @@ public class WorkoutSessionDAO {
                 "se.name, se.exercise_type, se.sets, se.reps, se.weight_kg, se.duration_min " +
                 "FROM workout_sessions ws " +
                 "LEFT JOIN session_exercises se ON ws.id = se.session_id " +
+                "WHERE ws.user_name = ? " +
                 "ORDER BY ws.id";
 
             selectStatement = connection.prepareStatement(sqlQuery);
+            selectStatement.setString(1, userName);
             rs = selectStatement.executeQuery();
 
             int lastId = -1;
@@ -153,16 +156,17 @@ public class WorkoutSessionDAO {
         return sessions;
     }
 
-    public int deleteSession(String date) {
+    public int deleteSession(String date, String userName) {
         Connection connection = null;
         PreparedStatement deleteStatement = null;
         int rowsUpdated = 0;
         try {
             connection = DatabaseUtility.getConnection(URL, USER_NAME, PASSWORD);
 
-            String sqlQuery = "DELETE FROM workout_sessions WHERE session_date = ?";
+            String sqlQuery = "DELETE FROM workout_sessions WHERE session_date = ? AND user_name = ?";
             deleteStatement = connection.prepareStatement(sqlQuery);
             deleteStatement.setString(1, date);
+            deleteStatement.setString(2, userName);
             rowsUpdated = deleteStatement.executeUpdate();
         } catch (SQLException e) {
             System.err.println("An error occurred.");

@@ -3,6 +3,7 @@ USE workout_tracker;
 
 CREATE TABLE IF NOT EXISTS workout_sessions (
     id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_name    VARCHAR(100) NOT NULL,
     session_date VARCHAR(20) NOT NULL,
     notes        TEXT
 );

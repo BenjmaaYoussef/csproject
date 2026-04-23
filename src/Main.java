@@ -286,10 +286,11 @@ public class Main {
             System.out.println("No sessions to save.");
             return;
         }
+        String userName = manager.getUser().getName();
         WorkoutSessionDAO dao = new WorkoutSessionDAO();
         int saved = 0;
         for (int i = 0; i < sessions.size(); i++) {
-            int result = dao.saveSession(sessions.get(i));
+            int result = dao.saveSession(sessions.get(i), userName);
             if (result == 1) {
                 saved++;
             }
@@ -300,8 +301,9 @@ public class Main {
     // ------------------------------------------------------------------ Option 11: Load from DB
 
     private static void loadSessionsFromDB() {
+        String userName = manager.getUser().getName();
         WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        ArrayList<WorkoutSession> sessions = dao.getAllSessions();
+        ArrayList<WorkoutSession> sessions = dao.getAllSessions(userName);
         if (sessions.isEmpty()) {
             System.out.println("No sessions found in database.");
             return;
@@ -316,8 +318,9 @@ public class Main {
 
     private static void deleteSessionFromDB() {
         String date = readString("Enter date of session to delete (yyyy-MM-dd): ");
+        String userName = manager.getUser().getName();
         WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        int result = dao.deleteSession(date);
+        int result = dao.deleteSession(date, userName);
         if (result == 1) {
             System.out.println("Session deleted successfully.");
         } else {
