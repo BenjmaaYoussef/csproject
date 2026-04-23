@@ -82,3 +82,13 @@ Tables: `workout_sessions`, `session_exercises`
 - Main window with tabbed pane: Dashboard, Add Workout, History, Profile
 - JTable to display workout sessions
 - JChart or custom drawing for progress visualization
+
+---
+
+### Phase 8 – Multi-User Profile Selection (Chapter 5 + Chapter 8)
+**Goal:** Persist a list of user profiles so the app never asks for name/stats on repeat launches.
+
+- `FileManager`: add `saveUsers(ArrayList<User>)` and `loadUsers()` using `ObjectOutputStream`/`ObjectInputStream` (Chapter 5 serialization pattern), saved to `users.bin`
+- Per-user session files: `workouts_<name>.bin` so each user's data is isolated
+- `ProfileSetupDialog`: on open, load `users.bin`; if users exist show a `JComboBox` to pick one plus a "New Profile" button; if list is empty show the create-profile form directly
+- `WorkoutTrackerGUI`: after login, save updated user list back to `users.bin`; load/save sessions using the per-user filename

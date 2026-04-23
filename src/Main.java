@@ -23,7 +23,7 @@ public class Main {
 
         manager = setupUser();
 
-        ArrayList<WorkoutSession> saved = FileManager.loadBinary();
+        ArrayList<WorkoutSession> saved = FileManager.loadUserSessions(manager.getUser().getName());
         for (WorkoutSession s : saved) {
             manager.addSession(s);
         }
@@ -57,12 +57,42 @@ public class Main {
     // ------------------------------------------------------------------ Setup
 
     private static WorkoutManager setupUser() {
-        System.out.println("\n--- Profile Setup ---");
+        ArrayList<User> savedUsers = FileManager.loadUsers();
+
+        if (!savedUsers.isEmpty()) {
+            System.out.println("\n--- Select Profile ---");
+            for (int i = 0; i < savedUsers.size(); i++) {
+                System.out.println("  " + (i + 1) + ". " + savedUsers.get(i).getName());
+            }
+            System.out.println("  " + (savedUsers.size() + 1) + ". New profile");
+            int choice = readInt("Choice: ");
+            if (choice >= 1 && choice <= savedUsers.size()) {
+                User user = savedUsers.get(choice - 1);
+                System.out.println("Welcome back, " + user.getName() + "! BMI = " + String.format("%.1f", user.getBMI()));
+                return new WorkoutManager(user);
+            }
+        }
+
+        System.out.println("\n--- New Profile ---");
         String name = readString("Your name: ");
         int age = readInt("Age: ");
         double weight = readDouble("Weight (kg): ");
         double height = readDouble("Height (cm): ");
         User user = new User(name, age, weight, height);
+
+        boolean found = false;
+        for (int i = 0; i < savedUsers.size(); i++) {
+            if (savedUsers.get(i).getName().equalsIgnoreCase(name)) {
+                savedUsers.set(i, user);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            savedUsers.add(user);
+        }
+        FileManager.saveUsers(savedUsers);
+
         System.out.println("Welcome, " + name + "! BMI = " + String.format("%.1f", user.getBMI()));
         return new WorkoutManager(user);
     }
@@ -121,7 +151,7 @@ public class Main {
 
         manager.addSession(session);
         System.out.println("Session saved for " + date + " with " + session.getExercises().size() + " exercise(s).");
-        FileManager.saveBinary(manager.getAllSessions());
+        FileManager.saveUserSessions(manager.getUser().getName(), manager.getAllSessions());
     }
 
     private static Exercise promptExercise() throws InvalidExerciseException {

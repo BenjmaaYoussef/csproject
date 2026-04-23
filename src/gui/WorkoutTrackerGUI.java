@@ -60,9 +60,9 @@ public class WorkoutTrackerGUI extends JFrame {
             System.exit(0);
         }
 
-        // 2. Create manager and load saved sessions
+        // 2. Create manager and load saved sessions for this user
         manager = new WorkoutManager(user);
-        ArrayList<WorkoutSession> saved = FileManager.loadBinary();
+        ArrayList<WorkoutSession> saved = FileManager.loadUserSessions(user.getName());
         for (WorkoutSession s : saved) {
             manager.addSession(s);
         }

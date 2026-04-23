@@ -174,16 +174,18 @@ public class DataPanel extends JPanel {
     // ------------------------------------------------------------------ Phase 4: Serialization
 
     private void saveBinary() {
-        FileManager.saveBinary(manager.getAllSessions());
-        log("Saved " + manager.getAllSessions().size() + " session(s) to workouts.bin");
+        String name = manager.getUser().getName();
+        FileManager.saveUserSessions(name, manager.getAllSessions());
+        log("Saved " + manager.getAllSessions().size() + " session(s) for " + name);
     }
 
     private void loadBinary() {
-        ArrayList<WorkoutSession> loaded = FileManager.loadBinary();
+        String name = manager.getUser().getName();
+        ArrayList<WorkoutSession> loaded = FileManager.loadUserSessions(name);
         for (WorkoutSession s : loaded) {
             manager.addSession(s);
         }
-        log("Loaded " + loaded.size() + " session(s) from workouts.bin");
+        log("Loaded " + loaded.size() + " session(s) for " + name);
         onDataChanged.run();
     }
 

@@ -21,6 +21,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
+import model.User;
 
 /**
  * Handles all file I/O for the Workout Tracker app.
@@ -36,6 +37,7 @@ public class FileManager {
     private static final String REPORT_FILE    = "report.txt";
     private static final String BINARY_FILE    = "workouts.bin";
     private static final String XML_FILE       = "workouts.xml";
+    private static final String USERS_FILE     = "users.bin";
 
     // ------------------------------------------------------------------ Save
 
@@ -157,6 +159,85 @@ public class FileManager {
             System.err.println("An error occurred while exporting to XML.");
             e.printStackTrace();
         }
+    }
+
+    // ------------------------------------------------------------------ Per-user binary save/load
+
+    /** Returns the binary filename for a given user's sessions. */
+    private static String userSessionFile(String userName) {
+        return "workouts_" + userName.replaceAll("\\s+", "_") + ".bin";
+    }
+
+    public static void saveUserSessions(String userName, ArrayList<WorkoutSession> sessions) {
+        String path = userSessionFile(userName);
+        try {
+            FileOutputStream fo = new FileOutputStream(path);
+            ObjectOutputStream os = new ObjectOutputStream(fo);
+            os.writeObject(sessions);
+            os.close();
+            fo.close();
+            System.out.println("Sessions saved to " + path + ".");
+        } catch (Exception e) {
+            System.err.println("An error occurred while saving sessions for " + userName + ".");
+            e.printStackTrace();
+        }
+    }
+
+    public static ArrayList<WorkoutSession> loadUserSessions(String userName) {
+        ArrayList<WorkoutSession> sessions = new ArrayList<>();
+        String path = userSessionFile(userName);
+        File file = new File(path);
+        if (!file.exists()) {
+            return sessions;
+        }
+        try {
+            FileInputStream fi = new FileInputStream(path);
+            ObjectInputStream ois = new ObjectInputStream(fi);
+            sessions = (ArrayList<WorkoutSession>) ois.readObject();
+            ois.close();
+            fi.close();
+            System.out.println("Loaded " + sessions.size() + " session(s) for " + userName + ".");
+        } catch (Exception e) {
+            System.err.println("An error occurred while loading sessions for " + userName + ".");
+            e.printStackTrace();
+        }
+        return sessions;
+    }
+
+    // ------------------------------------------------------------------ User list save/load
+
+    public static void saveUsers(ArrayList<User> users) {
+        try {
+            FileOutputStream fo = new FileOutputStream(USERS_FILE);
+            ObjectOutputStream os = new ObjectOutputStream(fo);
+            os.writeObject(users);
+            os.close();
+            fo.close();
+            System.out.println("User list saved to " + USERS_FILE + ".");
+        } catch (Exception e) {
+            System.err.println("An error occurred while saving user list.");
+            e.printStackTrace();
+        }
+    }
+
+    public static ArrayList<User> loadUsers() {
+        ArrayList<User> users = new ArrayList<>();
+        File file = new File(USERS_FILE);
+        if (!file.exists()) {
+            return users;
+        }
+        try {
+            FileInputStream fi = new FileInputStream(USERS_FILE);
+            ObjectInputStream ois = new ObjectInputStream(fi);
+            users = (ArrayList<User>) ois.readObject();
+            ois.close();
+            fi.close();
+            System.out.println("Loaded " + users.size() + " user(s) from " + USERS_FILE + ".");
+        } catch (Exception e) {
+            System.err.println("An error occurred while loading user list.");
+            e.printStackTrace();
+        }
+        return users;
     }
 
     // ------------------------------------------------------------------ Export report

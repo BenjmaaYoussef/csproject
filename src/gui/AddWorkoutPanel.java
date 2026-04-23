@@ -298,7 +298,7 @@ public class AddWorkoutPanel extends JPanel {
         }
 
         manager.addSession(session);
-        FileManager.saveBinary(manager.getAllSessions());
+        FileManager.saveUserSessions(manager.getUser().getName(), manager.getAllSessions());
 
         // Reset form
         dateField.setText("");
