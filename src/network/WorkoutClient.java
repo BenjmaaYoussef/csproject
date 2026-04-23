@@ -17,6 +17,9 @@ public class WorkoutClient {
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
         System.out.println("WorkoutClient started. Server: " + HOST + ":" + PORT);
+        System.out.print("Your name: ");
+        String userName = scanner.nextLine().trim();
+
         while (running) {
             System.out.println("\n=== Client Menu ===");
             System.out.println("1. Get all sessions from server");
@@ -35,9 +38,9 @@ public class WorkoutClient {
                 sendAndReceive("EXIT");
                 running = false;
             } else if (choice == 1) {
-                sendAndReceive("GET_SESSIONS");
+                sendAndReceive("GET_SESSIONS:" + userName);
             } else if (choice == 2) {
-                String sessionData = buildSessionData(scanner);
+                String sessionData = buildSessionData(scanner, userName);
                 sendAndReceive("ADD_SESSION:" + sessionData);
             } else {
                 System.out.println("Invalid option. Try again.");
@@ -70,13 +73,14 @@ public class WorkoutClient {
     }
 
     // Builds a pipe-delimited session string matching the FileManager (Phase 3) format.
-    // Format: SESSION|date|notes\nEXERCISE|name|type|sets|reps|weightKg|durationMin\n...
-    private static String buildSessionData(Scanner scanner) {
+    // Format: <userName>\nSESSION|date|notes\nEXERCISE|name|type|sets|reps|weightKg|durationMin\n...
+    private static String buildSessionData(Scanner scanner, String userName) {
         System.out.print("Date (yyyy-MM-dd): ");
         String date = scanner.nextLine().trim();
         System.out.print("Notes (or press Enter to skip): ");
         String notes = scanner.nextLine().trim();
         StringBuilder sb = new StringBuilder();
+        sb.append(userName).append("\n");
         sb.append("SESSION|").append(date).append("|").append(notes);
         boolean addingExercises = true;
         while (addingExercises) {

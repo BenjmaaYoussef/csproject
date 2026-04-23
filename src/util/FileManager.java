@@ -33,11 +33,8 @@ import model.User;
  */
 public class FileManager {
 
-    private static final String WORKOUTS_FILE  = "workouts.txt";
-    private static final String REPORT_FILE    = "report.txt";
-    private static final String BINARY_FILE    = "workouts.bin";
-    private static final String XML_FILE       = "workouts.xml";
-    private static final String USERS_FILE     = "users.bin";
+    private static final String REPORT_FILE = "report.txt";
+    private static final String USERS_FILE  = "users.bin";
 
     // ------------------------------------------------------------------ Save
 
@@ -117,44 +114,6 @@ public class FileManager {
             e.printStackTrace();
         } catch (InvalidExerciseException | DuplicateExerciseException e) {
             System.err.println("Error reading exercise data: " + e.getMessage());
-        }
-        return sessions;
-    }
-
-    // ------------------------------------------------------------------ Binary save
-
-    public static void saveBinary(ArrayList<WorkoutSession> sessions) {
-        try {
-            FileOutputStream fo = new FileOutputStream(BINARY_FILE);
-            ObjectOutputStream os = new ObjectOutputStream(fo);
-            os.writeObject(sessions);
-            os.close();
-            fo.close();
-            System.out.println("Sessions saved to " + BINARY_FILE + ".");
-        } catch (Exception e) {
-            System.err.println("An error occurred while saving (binary).");
-            e.printStackTrace();
-        }
-    }
-
-    // ------------------------------------------------------------------ Binary load
-
-    public static ArrayList<WorkoutSession> loadBinary() {
-        ArrayList<WorkoutSession> sessions = new ArrayList<>();
-        File file = new File(BINARY_FILE);
-        if (!file.exists()) {
-            return sessions;
-        }
-        try {
-            FileInputStream fi = new FileInputStream(BINARY_FILE);
-            ObjectInputStream ois = new ObjectInputStream(fi);
-            sessions = (ArrayList<WorkoutSession>) ois.readObject();
-            ois.close();
-            fi.close();
-            System.out.println("Loaded " + sessions.size() + " session(s) from " + BINARY_FILE + ".");
-        } catch (Exception e) {
-            System.err.println("An error occurred while loading (binary).");
-            e.printStackTrace();
         }
         return sessions;
     }
