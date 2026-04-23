@@ -33,8 +33,7 @@ import model.User;
  */
 public class FileManager {
 
-    private static final String REPORT_FILE = "report.txt";
-    private static final String USERS_FILE  = "users.bin";
+    private static final String USERS_FILE = "users.bin";
 
     // ------------------------------------------------------------------ Save
 
@@ -215,11 +214,12 @@ public class FileManager {
     // ------------------------------------------------------------------ Export report
 
     /**
-     * Exports a readable workout history report to report.txt.
+     * Exports a readable workout history report to report_<name>.txt.
      */
     public static void exportReport(WorkoutManager manager) {
+        String path = "report_" + manager.getUser().getName().replaceAll("\\s+", "_") + ".txt";
         try {
-            FileWriter writer = new FileWriter(REPORT_FILE);
+            FileWriter writer = new FileWriter(path);
             writer.write("========================================\n");
             writer.write("  WORKOUT REPORT – " + manager.getUser().getName() + "\n");
             writer.write("========================================\n\n");
@@ -229,7 +229,7 @@ public class FileManager {
                 writer.write(s.toString() + "\n");
             }
             writer.close();
-            System.out.println("Report exported to " + REPORT_FILE + ".");
+            System.out.println("Report exported to " + path + ".");
         } catch (IOException e) {
             System.err.println("An error occurred while exporting the report.");
             e.printStackTrace();
