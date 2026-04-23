@@ -57,6 +57,14 @@ src/
   network/
     WorkoutServer.java        – Phase 6: ServerSocket on port 9876, handles GET_SESSIONS / ADD_SESSION / EXIT
     WorkoutClient.java        – Phase 6: Socket client, standalone menu + sendAndReceive() reused by Main
+  gui/
+    AppColors.java            – Phase 7: shared color palette + fonts
+    ProfileSetupDialog.java   – Phase 7: modal JDialog for first-run profile entry
+    DashboardPanel.java       – Phase 7: stat cards + custom bar chart (exercises per session)
+    AddWorkoutPanel.java      – Phase 7: form to build and save a WorkoutSession with exercises
+    HistoryPanel.java         – Phase 7: JTable of sessions + detail pane below
+    ProfilePanel.java         – Phase 7: user info + BMI semicircle gauge
+    WorkoutTrackerGUI.java    – Phase 7: main JFrame with JTabbedPane; run this instead of Main
 ```
 
 ## Current progress
@@ -66,6 +74,7 @@ src/
 - Phase 4 (Serialization): DONE — binary via ObjectOutputStream/ObjectInputStream (workouts.bin), XML via XMLEncoder (workouts.xml)
 - Phase 5 (Database): DONE — MySQL via JDBC; `DatabaseUtility` + `WorkoutSessionDAO` in `src/db/`; run `workout_tracker.sql` first; driver: `mysql-connector-j-9.6.0/mysql-connector-j-9.6.0.jar`
 - Phase 6 (Client-Server): DONE — TCP sockets; `WorkoutServer` + `WorkoutClient` in `src/network/`; text protocol (GET_SESSIONS, ADD_SESSION, EXIT) via DataInputStream/DataOutputStream
+- Phase 7 (GUI / Swing): DONE — `WorkoutTrackerGUI` is the new entry point; 4-tab JTabbedPane (Dashboard, Add Workout, History, Profile); custom bar chart + BMI gauge drawn with Graphics2D
 
 ## Data files (Phase 3)
 - `workouts.txt` — pipe-delimited session data, written by `FileManager.saveSessions()`, read by `FileManager.loadSessions()`
