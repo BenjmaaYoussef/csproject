@@ -182,17 +182,18 @@ public class WorkoutSessionDAO {
         return rowsUpdated;
     }
 
-    public int updateSessionNotes(String date, String newNotes) {
+    public int updateSessionNotes(String date, String newNotes, String userName) {
         Connection connection = null;
         PreparedStatement updateStatement = null;
         int rowsUpdated = 0;
         try {
             connection = DatabaseUtility.getConnection(URL, USER_NAME, PASSWORD);
 
-            String sqlQuery = "UPDATE workout_sessions SET notes = ? WHERE session_date = ?";
+            String sqlQuery = "UPDATE workout_sessions SET notes = ? WHERE session_date = ? AND user_name = ?";
             updateStatement = connection.prepareStatement(sqlQuery);
             updateStatement.setString(1, newNotes);
             updateStatement.setString(2, date);
+            updateStatement.setString(3, userName);
             rowsUpdated = updateStatement.executeUpdate();
         } catch (SQLException e) {
             System.err.println("An error occurred.");

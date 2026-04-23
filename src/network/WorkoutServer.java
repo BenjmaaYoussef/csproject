@@ -59,9 +59,10 @@ public class WorkoutServer {
     private static String handleCommand(String command) {
         if (command.equalsIgnoreCase("EXIT")) {
             return "Server shutting down. Goodbye!";
-        } else if (command.equalsIgnoreCase("GET_SESSIONS")) {
+        } else if (command.startsWith("GET_SESSIONS:")) {
+            String userName = command.substring("GET_SESSIONS:".length()).trim();
             WorkoutSessionDAO dao = new WorkoutSessionDAO();
-            ArrayList<WorkoutSession> sessions = dao.getAllSessions();
+            ArrayList<WorkoutSession> sessions = dao.getAllSessions(userName);
             if (sessions.isEmpty()) {
                 return "No sessions found.";
             }
@@ -71,13 +72,20 @@ public class WorkoutServer {
             }
             return sb.toString();
         } else if (command.startsWith("ADD_SESSION:")) {
-            String data = command.substring("ADD_SESSION:".length());
+            // Format: ADD_SESSION:<userName>\n<session data>
+            String payload = command.substring("ADD_SESSION:".length());
+            int newline = payload.indexOf('\n');
+            if (newline < 0) {
+                return "ERROR: Missing user name in ADD_SESSION command.";
+            }
+            String userName = payload.substring(0, newline).trim();
+            String data = payload.substring(newline + 1);
             WorkoutSession session = parseSession(data);
             if (session == null) {
                 return "ERROR: Invalid session data.";
             }
             WorkoutSessionDAO dao = new WorkoutSessionDAO();
-            int result = dao.saveSession(session);
+            int result = dao.saveSession(session, userName);
             if (result == 1) {
                 return "OK: Session saved for " + session.getDate() + ".";
             } else {

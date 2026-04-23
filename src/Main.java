@@ -275,7 +275,7 @@ public class Main {
     // ------------------------------------------------------------------ Option 9: Export to XML
 
     private static void exportXML() {
-        FileManager.exportXML(manager.getAllSessions());
+        FileManager.exportXML(manager.getUser().getName(), manager.getAllSessions());
     }
 
     // ------------------------------------------------------------------ Option 10: Save to DB
@@ -332,7 +332,7 @@ public class Main {
 
     private static void fetchSessionsFromServer() {
         System.out.println("\n--- Fetching sessions from server ---");
-        WorkoutClient.sendAndReceive("GET_SESSIONS");
+        WorkoutClient.sendAndReceive("GET_SESSIONS:" + manager.getUser().getName());
     }
 
     // ------------------------------------------------------------------ Option 14: Send session to server
@@ -342,6 +342,7 @@ public class Main {
         String date  = readString("Date (yyyy-MM-dd): ");
         String notes = readString("Notes (or press Enter to skip): ");
         StringBuilder sb = new StringBuilder();
+        sb.append(manager.getUser().getName()).append("\n");
         sb.append("SESSION|").append(date).append("|").append(notes);
         boolean addingExercises = true;
         while (addingExercises) {

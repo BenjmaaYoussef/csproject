@@ -153,16 +153,18 @@ public class DataPanel extends JPanel {
     // ------------------------------------------------------------------ Phase 3: File (Text)
 
     private void saveText() {
-        FileManager.saveSessions(manager.getAllSessions());
-        log("Saved " + manager.getAllSessions().size() + " session(s) to workouts.txt");
+        String name = manager.getUser().getName();
+        FileManager.saveSessions(name, manager.getAllSessions());
+        log("Saved " + manager.getAllSessions().size() + " session(s) for " + name + " (txt)");
     }
 
     private void loadText() {
-        ArrayList<WorkoutSession> loaded = FileManager.loadSessions();
+        String name = manager.getUser().getName();
+        ArrayList<WorkoutSession> loaded = FileManager.loadSessions(name);
         for (WorkoutSession s : loaded) {
             manager.addSession(s);
         }
-        log("Loaded " + loaded.size() + " session(s) from workouts.txt");
+        log("Loaded " + loaded.size() + " session(s) for " + name + " (txt)");
         onDataChanged.run();
     }
 
@@ -190,8 +192,9 @@ public class DataPanel extends JPanel {
     }
 
     private void exportXML() {
-        FileManager.exportXML(manager.getAllSessions());
-        log("Sessions exported to workouts.xml");
+        String name = manager.getUser().getName();
+        FileManager.exportXML(name, manager.getAllSessions());
+        log("Sessions exported to workouts_" + name.replaceAll("\\s+", "_") + ".xml");
     }
 
     // ------------------------------------------------------------------ Phase 5: Database
@@ -242,8 +245,9 @@ public class DataPanel extends JPanel {
     // ------------------------------------------------------------------ Phase 6: Client-Server
 
     private void fetchFromServer() {
-        log("Sending GET_SESSIONS to server...");
-        String response = capture(() -> WorkoutClient.sendAndReceive("GET_SESSIONS"));
+        String userName = manager.getUser().getName();
+        log("Sending GET_SESSIONS to server for " + userName + "...");
+        String response = capture(() -> WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName));
         log(response);
     }
 
@@ -253,7 +257,6 @@ public class DataPanel extends JPanel {
             JOptionPane.QUESTION_MESSAGE);
         if (date == null || date.trim().isEmpty()) return;
 
-        // Find the session in manager
         ArrayList<WorkoutSession> sessions = manager.getAllSessions();
         WorkoutSession toSend = null;
         for (int i = 0; i < sessions.size(); i++) {
@@ -267,7 +270,9 @@ public class DataPanel extends JPanel {
             return;
         }
 
+        String userName = manager.getUser().getName();
         StringBuilder sb = new StringBuilder();
+        sb.append(userName).append("\n");
         sb.append("SESSION|").append(toSend.getDate()).append("|").append(toSend.getNotes());
         for (model.Exercise e : toSend.getExercises()) {
             sb.append("\nEXERCISE|").append(e.getName()).append("|").append(e.getType().name())

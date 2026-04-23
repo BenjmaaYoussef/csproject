@@ -41,12 +41,23 @@ public class FileManager {
 
     // ------------------------------------------------------------------ Save
 
+    /** Returns the text filename for a given user's sessions. */
+    private static String userTextFile(String userName) {
+        return "workouts_" + userName.replaceAll("\\s+", "_") + ".txt";
+    }
+
+    /** Returns the XML filename for a given user's sessions. */
+    private static String userXmlFile(String userName) {
+        return "workouts_" + userName.replaceAll("\\s+", "_") + ".xml";
+    }
+
     /**
-     * Saves all sessions to workouts.txt (overwrites existing file).
+     * Saves all sessions to workouts_<name>.txt (overwrites existing file).
      */
-    public static void saveSessions(ArrayList<WorkoutSession> sessions) {
+    public static void saveSessions(String userName, ArrayList<WorkoutSession> sessions) {
+        String path = userTextFile(userName);
         try {
-            FileWriter writer = new FileWriter(WORKOUTS_FILE);
+            FileWriter writer = new FileWriter(path);
             for (WorkoutSession session : sessions) {
                 writer.write("SESSION|" + session.getDate() + "|" + session.getNotes() + "\n");
                 for (Exercise e : session.getExercises()) {
@@ -56,7 +67,7 @@ public class FileManager {
                 }
             }
             writer.close();
-            System.out.println("Sessions saved to " + WORKOUTS_FILE + ".");
+            System.out.println("Sessions saved to " + path + ".");
         } catch (IOException e) {
             System.err.println("An error occurred while saving sessions.");
             e.printStackTrace();
@@ -66,12 +77,13 @@ public class FileManager {
     // ------------------------------------------------------------------ Load
 
     /**
-     * Loads sessions from workouts.txt.
+     * Loads sessions from workouts_<name>.txt.
      * Returns an empty list if the file does not exist.
      */
-    public static ArrayList<WorkoutSession> loadSessions() {
+    public static ArrayList<WorkoutSession> loadSessions(String userName) {
         ArrayList<WorkoutSession> sessions = new ArrayList<>();
-        File file = new File(WORKOUTS_FILE);
+        String path = userTextFile(userName);
+        File file = new File(path);
         if (!file.exists()) {
             return sessions;
         }
@@ -99,7 +111,7 @@ public class FileManager {
                 }
             }
             reader.close();
-            System.out.println("Loaded " + sessions.size() + " session(s) from " + WORKOUTS_FILE + ".");
+            System.out.println("Loaded " + sessions.size() + " session(s) from " + path + ".");
         } catch (FileNotFoundException e) {
             System.err.println("An error occurred.");
             e.printStackTrace();
@@ -149,12 +161,13 @@ public class FileManager {
 
     // ------------------------------------------------------------------ XML export
 
-    public static void exportXML(ArrayList<WorkoutSession> sessions) {
+    public static void exportXML(String userName, ArrayList<WorkoutSession> sessions) {
+        String path = userXmlFile(userName);
         try {
-            XMLEncoder encoder = new XMLEncoder(new BufferedOutputStream(new FileOutputStream(XML_FILE)));
+            XMLEncoder encoder = new XMLEncoder(new BufferedOutputStream(new FileOutputStream(path)));
             encoder.writeObject(sessions);
             encoder.close();
-            System.out.println("Sessions exported to " + XML_FILE + ".");
+            System.out.println("Sessions exported to " + path + ".");
         } catch (Exception e) {
             System.err.println("An error occurred while exporting to XML.");
             e.printStackTrace();
