@@ -7,9 +7,7 @@ import model.ExerciseType;
 import model.WorkoutManager;
 import model.WorkoutSession;
 
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
