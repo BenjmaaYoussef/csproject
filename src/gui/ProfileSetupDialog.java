@@ -1,6 +1,7 @@
 package gui;
 
 import model.User;
+import util.ConnectionMode;
 import util.FileManager;
 
 import javax.swing.BorderFactory;
@@ -14,6 +15,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -34,6 +37,9 @@ public class ProfileSetupDialog extends JDialog {
 
     // Selection screen
     private JComboBox<String> userCombo;
+
+    // Shared mode selector
+    private JComboBox<String> modeCombo;
 
     // Create screen
     private JTextField nameField;
@@ -67,7 +73,33 @@ public class ProfileSetupDialog extends JDialog {
             cardLayout.show(cards, CARD_SELECT);
         }
 
-        setContentPane(cards);
+        JPanel main = new JPanel(new BorderLayout());
+        main.setBackground(AppColors.CARD);
+        main.add(cards, BorderLayout.CENTER);
+        main.add(buildModePanel(), BorderLayout.SOUTH);
+
+        setContentPane(main);
+    }
+
+    private JPanel buildModePanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 28, 10));
+        panel.setBackground(AppColors.CARD);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(0xDDDDDD)),
+            BorderFactory.createEmptyBorder(0, 0, 4, 0)
+        ));
+
+        JLabel lbl = new JLabel("Connection Mode:");
+        lbl.setFont(AppColors.FONT_BODY);
+        lbl.setForeground(AppColors.TEXT_DARK);
+        panel.add(lbl);
+
+        modeCombo = new JComboBox<>(new DefaultComboBoxModel<>(
+            new String[]{"Direct (Database)", "Via Server"}));
+        modeCombo.setFont(AppColors.FONT_BODY);
+        panel.add(modeCombo);
+
+        return panel;
     }
 
     // ------------------------------------------------------------------ Select card
@@ -158,6 +190,8 @@ public class ProfileSetupDialog extends JDialog {
         int idx = userCombo.getSelectedIndex();
         if (idx >= 0) {
             result = savedUsers.get(idx);
+            WorkoutTrackerGUI.connectionMode = modeCombo.getSelectedIndex() == 0
+                ? ConnectionMode.DIRECT_DB : ConnectionMode.VIA_SERVER;
             dispose();
         }
     }
@@ -272,6 +306,8 @@ public class ProfileSetupDialog extends JDialog {
             double wt  = Double.parseDouble(weightField.getText().trim());
             double ht  = Double.parseDouble(heightField.getText().trim());
             result = new User(name, age, wt, ht);
+            WorkoutTrackerGUI.connectionMode = modeCombo.getSelectedIndex() == 0
+                ? ConnectionMode.DIRECT_DB : ConnectionMode.VIA_SERVER;
 
             // Add to saved users if not already present
             boolean found = false;

@@ -1,11 +1,8 @@
 package network;
 
 import db.WorkoutSessionDAO;
-import exception.DuplicateExerciseException;
-import exception.InvalidExerciseException;
-import model.Exercise;
-import model.ExerciseType;
 import model.WorkoutSession;
+import util.FileManager;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -80,7 +77,7 @@ public class WorkoutServer {
             }
             String userName = payload.substring(0, newline).trim();
             String data = payload.substring(newline + 1);
-            WorkoutSession session = parseSession(data);
+            WorkoutSession session = FileManager.parseSessionFromText(data);
             if (session == null) {
                 return "ERROR: Invalid session data.";
             }
@@ -96,38 +93,4 @@ public class WorkoutServer {
         }
     }
 
-    // Parses session data in the same pipe-delimited format used by FileManager (Phase 3).
-    // Format: SESSION|date|notes\nEXERCISE|name|type|sets|reps|weightKg|durationMin\n...
-    private static WorkoutSession parseSession(String data) {
-        String[] lines = data.split("\n");
-        WorkoutSession session = null;
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-            if (line.startsWith("SESSION|")) {
-                String[] parts = line.split("\\|", 3);
-                String date  = parts[1];
-                String notes = parts.length > 2 ? parts[2] : "";
-                session = new WorkoutSession(date, notes);
-            } else if (line.startsWith("EXERCISE|") && session != null) {
-                String[] parts = line.split("\\|");
-                try {
-                    String name       = parts[1];
-                    ExerciseType type = ExerciseType.valueOf(parts[2]);
-                    int sets          = Integer.parseInt(parts[3]);
-                    int reps          = Integer.parseInt(parts[4]);
-                    double weightKg   = Double.parseDouble(parts[5]);
-                    int durationMin   = Integer.parseInt(parts[6]);
-                    Exercise e = new Exercise(name, sets, reps, weightKg, durationMin, type);
-                    session.addExercise(e);
-                } catch (InvalidExerciseException ex) {
-                    System.err.println("An error occurred.");
-                    ex.printStackTrace();
-                } catch (DuplicateExerciseException ex) {
-                    System.err.println("An error occurred.");
-                    ex.printStackTrace();
-                }
-            }
-        }
-        return session;
-    }
 }

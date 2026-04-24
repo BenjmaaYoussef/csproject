@@ -1,11 +1,14 @@
 package gui;
 
+import db.WorkoutSessionDAO;
 import exception.DuplicateExerciseException;
 import exception.InvalidExerciseException;
 import model.Exercise;
 import model.ExerciseType;
 import model.WorkoutManager;
 import model.WorkoutSession;
+import network.WorkoutClient;
+import util.ConnectionMode;
 import util.FileManager;
 
 import javax.swing.BorderFactory;
@@ -298,7 +301,7 @@ public class AddWorkoutPanel extends JPanel {
         }
 
         manager.addSession(session);
-        FileManager.saveUserSessions(manager.getUser().getName(), manager.getAllSessions());
+        autoSave(session);
 
         // Reset form
         dateField.setText("");
@@ -311,6 +314,28 @@ public class AddWorkoutPanel extends JPanel {
             "Saved", JOptionPane.INFORMATION_MESSAGE);
 
         onSessionSaved.run();
+    }
+
+    private void autoSave(WorkoutSession session) {
+        String userName = manager.getUser().getName();
+        if (!WorkoutTrackerGUI.offlineMode) {
+            if (WorkoutTrackerGUI.connectionMode == ConnectionMode.DIRECT_DB) {
+                WorkoutSessionDAO dao = new WorkoutSessionDAO();
+                dao.saveSession(session, userName);
+            } else { // VIA_SERVER
+                StringBuilder sb = new StringBuilder();
+                sb.append(userName).append("\n");
+                sb.append("SESSION|").append(session.getDate()).append("|").append(session.getNotes());
+                for (Exercise ex : session.getExercises()) {
+                    sb.append("\nEXERCISE|").append(ex.getName()).append("|").append(ex.getType().name())
+                      .append("|").append(ex.getSets()).append("|").append(ex.getReps())
+                      .append("|").append(ex.getWeightKg()).append("|").append(ex.getDurationMin());
+                }
+                WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
+            }
+            FileManager.saveSyncTimestamp(userName);
+        }
+        FileManager.saveUserSessions(userName, manager.getAllSessions());
     }
 
     private void clearExerciseForm() {

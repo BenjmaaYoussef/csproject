@@ -1,12 +1,20 @@
+import db.DatabaseUtility;
 import db.WorkoutSessionDAO;
 import exception.DuplicateExerciseException;
 import exception.InvalidExerciseException;
+import exception.WorkoutAppException;
 import exception.WorkoutNotFoundException;
 import model.*;
 import network.WorkoutClient;
+import util.ConnectionMode;
 import util.FileManager;
 import util.Pair;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.Socket;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -14,6 +22,13 @@ import java.util.Scanner;
 public class Main {
 
     private static WorkoutManager manager;
+    private static ConnectionMode connectionMode;
+    private static boolean offlineMode = false;
+
+    private static final String DB_URL  = "jdbc:mysql://localhost:3306/workout_tracker";
+    private static final String DB_USER = "root";
+    private static final String DB_PASS = "youssef123";
+
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -21,12 +36,30 @@ public class Main {
         System.out.println("║     Workout Tracker v6.0     ║");
         System.out.println("╚══════════════════════════════╝");
 
+        // C3: Pre-login report reader
+        System.out.println("View your last report before logging in? (yes/no)");
+        String preAnswer = scanner.nextLine().trim();
+        if (preAnswer.equalsIgnoreCase("yes")) {
+            System.out.println("Enter your username:");
+            String reportName = scanner.nextLine().trim();
+            try {
+                FileManager.readAndPrintReport(reportName);
+            } catch (WorkoutAppException e) {
+                System.out.println("No report found for this user.");
+            }
+        }
+
         manager = setupUser();
 
-        ArrayList<WorkoutSession> saved = FileManager.loadUserSessions(manager.getUser().getName());
-        for (WorkoutSession s : saved) {
-            manager.addSession(s);
-        }
+        // B2: Mode selection
+        System.out.println("\nSelect connection mode:");
+        System.out.println("  1. Direct (Database)");
+        System.out.println("  2. Via Server");
+        int modeChoice = readInt("Choice: ");
+        connectionMode = (modeChoice == 2) ? ConnectionMode.VIA_SERVER : ConnectionMode.DIRECT_DB;
+
+        // B4: Auto-load
+        autoLoad();
 
         boolean running = true;
         while (running) {
@@ -42,15 +75,15 @@ public class Main {
                 case 7  -> viewUserProfile();
                 case 8  -> exportReport();
                 case 9  -> exportXML();
-                case 10 -> saveSessionsToDB();
-                case 11 -> loadSessionsFromDB();
-                case 12 -> deleteSessionFromDB();
-                case 13 -> fetchSessionsFromServer();
-                case 14 -> sendSessionToServer();
+                case 10 -> deleteSessionFromDB();
+                case 11 -> fetchSessionsFromServer();
+                case 12 -> sendSessionToServer();
                 case 0  -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }
         }
+        // B7: Write .bin on clean exit
+        FileManager.saveUserSessions(manager.getUser().getName(), manager.getAllSessions());
         System.out.println("Goodbye!");
     }
 
@@ -97,6 +130,109 @@ public class Main {
         return new WorkoutManager(user);
     }
 
+    // ------------------------------------------------------------------ Auto-load / Auto-save
+
+    private static void autoLoad() {
+        String userName = manager.getUser().getName();
+        boolean connected = false;
+
+        // Step 1: Test connectivity
+        if (connectionMode == ConnectionMode.DIRECT_DB) {
+            Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+                connected = true;
+            }
+        } else { // VIA_SERVER
+            try {
+                Socket testSocket = new Socket("localhost", 9876);
+                testSocket.close();
+                connected = true;
+            } catch (IOException e) {
+                connected = false;
+            }
+        }
+
+        // C1: Offline sync – if connected and .bin is newer than last sync, push local data first
+        if (connected) {
+            File binFile = new File(FileManager.getUserBinPath(userName));
+            long lastSync = FileManager.readSyncTimestamp(userName);
+            if (binFile.exists() && binFile.lastModified() > lastSync) {
+                ArrayList<WorkoutSession> binSessions = FileManager.loadUserSessions(userName);
+                if (!binSessions.isEmpty()) {
+                    if (connectionMode == ConnectionMode.DIRECT_DB) {
+                        WorkoutSessionDAO dao = new WorkoutSessionDAO();
+                        for (int i = 0; i < binSessions.size(); i++) {
+                            dao.saveSession(binSessions.get(i), userName);
+                        }
+                    } else { // VIA_SERVER
+                        for (int i = 0; i < binSessions.size(); i++) {
+                            WorkoutSession s = binSessions.get(i);
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(userName).append("\n");
+                            sb.append("SESSION|").append(s.getDate()).append("|").append(s.getNotes());
+                            for (Exercise e : s.getExercises()) {
+                                sb.append("\nEXERCISE|").append(e.getName()).append("|")
+                                  .append(e.getType().name()).append("|").append(e.getSets())
+                                  .append("|").append(e.getReps()).append("|")
+                                  .append(e.getWeightKg()).append("|").append(e.getDurationMin());
+                            }
+                            WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
+                        }
+                    }
+                    FileManager.saveSyncTimestamp(userName);
+                    System.out.println("Connection restored. Local changes synced.");
+                }
+            }
+        }
+
+        // Step 2: Normal auto-load
+        ArrayList<WorkoutSession> sessions = new ArrayList<>();
+        if (connected) {
+            WorkoutSessionDAO dao = new WorkoutSessionDAO();
+            sessions = dao.getAllSessions(userName);
+            for (int i = 0; i < sessions.size(); i++) {
+                manager.addSession(sessions.get(i));
+            }
+            FileManager.saveUserSessions(userName, manager.getAllSessions());
+            FileManager.saveSyncTimestamp(userName);
+            offlineMode = false;
+        } else {
+            ArrayList<WorkoutSession> binSessions = FileManager.loadUserSessions(userName);
+            offlineMode = true;
+            if (!binSessions.isEmpty()) {
+                for (int i = 0; i < binSessions.size(); i++) {
+                    manager.addSession(binSessions.get(i));
+                }
+                System.out.println("Could not connect. Using latest saved version from disk.");
+            } else {
+                System.out.println("Could not connect and no local data found. Starting fresh.");
+            }
+        }
+    }
+
+    private static void autoSave(WorkoutSession session) {
+        String userName = manager.getUser().getName();
+        if (!offlineMode) {
+            if (connectionMode == ConnectionMode.DIRECT_DB) {
+                WorkoutSessionDAO dao = new WorkoutSessionDAO();
+                dao.saveSession(session, userName);
+            } else { // VIA_SERVER
+                StringBuilder sb = new StringBuilder();
+                sb.append(userName).append("\n");
+                sb.append("SESSION|").append(session.getDate()).append("|").append(session.getNotes());
+                for (Exercise e : session.getExercises()) {
+                    sb.append("\nEXERCISE|").append(e.getName()).append("|").append(e.getType().name())
+                      .append("|").append(e.getSets()).append("|").append(e.getReps())
+                      .append("|").append(e.getWeightKg()).append("|").append(e.getDurationMin());
+                }
+                WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
+            }
+            FileManager.saveSyncTimestamp(userName);
+        }
+        FileManager.saveUserSessions(userName, manager.getAllSessions());
+    }
+
     // ------------------------------------------------------------------ Menus
 
     private static void printMainMenu() {
@@ -111,12 +247,10 @@ public class Main {
         System.out.println(" 8. Export report to file");
         System.out.println(" 9. Export sessions to XML");
         System.out.println("--- Database ---");
-        System.out.println("10. Save all sessions to database");
-        System.out.println("11. Load sessions from database");
-        System.out.println("12. Delete a session from database");
+        System.out.println("10. Delete a session from database");
         System.out.println("--- Client-Server ---");
-        System.out.println("13. Fetch all sessions from server");
-        System.out.println("14. Send a session to server");
+        System.out.println("11. Fetch all sessions from server");
+        System.out.println("12. Send a session to server");
         System.out.println(" 0. Exit");
         System.out.println("==============================");
     }
@@ -151,7 +285,7 @@ public class Main {
 
         manager.addSession(session);
         System.out.println("Session saved for " + date + " with " + session.getExercises().size() + " exercise(s).");
-        FileManager.saveUserSessions(manager.getUser().getName(), manager.getAllSessions());
+        autoSave(session);
     }
 
     private static Exercise promptExercise() throws InvalidExerciseException {
@@ -278,43 +412,7 @@ public class Main {
         FileManager.exportXML(manager.getUser().getName(), manager.getAllSessions());
     }
 
-    // ------------------------------------------------------------------ Option 10: Save to DB
-
-    private static void saveSessionsToDB() {
-        ArrayList<WorkoutSession> sessions = manager.getAllSessions();
-        if (sessions.isEmpty()) {
-            System.out.println("No sessions to save.");
-            return;
-        }
-        String userName = manager.getUser().getName();
-        WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        int saved = 0;
-        for (int i = 0; i < sessions.size(); i++) {
-            int result = dao.saveSession(sessions.get(i), userName);
-            if (result == 1) {
-                saved++;
-            }
-        }
-        System.out.println(saved + " session(s) saved to database.");
-    }
-
-    // ------------------------------------------------------------------ Option 11: Load from DB
-
-    private static void loadSessionsFromDB() {
-        String userName = manager.getUser().getName();
-        WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        ArrayList<WorkoutSession> sessions = dao.getAllSessions(userName);
-        if (sessions.isEmpty()) {
-            System.out.println("No sessions found in database.");
-            return;
-        }
-        System.out.println("\n--- Sessions loaded from database ---");
-        for (int i = 0; i < sessions.size(); i++) {
-            System.out.println(sessions.get(i));
-        }
-    }
-
-    // ------------------------------------------------------------------ Option 12: Delete from DB
+    // ------------------------------------------------------------------ Option 10: Delete from DB
 
     private static void deleteSessionFromDB() {
         String date = readString("Enter date of session to delete (yyyy-MM-dd): ");
@@ -328,14 +426,14 @@ public class Main {
         }
     }
 
-    // ------------------------------------------------------------------ Option 13: Fetch from server
+    // ------------------------------------------------------------------ Option 11: Fetch from server
 
     private static void fetchSessionsFromServer() {
         System.out.println("\n--- Fetching sessions from server ---");
         WorkoutClient.sendAndReceive("GET_SESSIONS:" + manager.getUser().getName());
     }
 
-    // ------------------------------------------------------------------ Option 14: Send session to server
+    // ------------------------------------------------------------------ Option 12: Send session to server
 
     private static void sendSessionToServer() {
         System.out.println("\n--- Send session to server ---");

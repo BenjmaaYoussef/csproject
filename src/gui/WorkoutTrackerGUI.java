@@ -1,8 +1,14 @@
 package gui;
 
+import db.DatabaseUtility;
+import db.WorkoutSessionDAO;
+import exception.WorkoutAppException;
+import model.Exercise;
 import model.User;
 import model.WorkoutManager;
 import model.WorkoutSession;
+import network.WorkoutClient;
+import util.ConnectionMode;
 import util.FileManager;
 
 import javax.swing.BorderFactory;
@@ -10,7 +16,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -18,6 +26,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.io.File;
+import java.io.IOException;
+import java.net.Socket;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 /**
@@ -36,6 +49,13 @@ import java.util.ArrayList;
  */
 public class WorkoutTrackerGUI extends JFrame {
 
+    public static ConnectionMode connectionMode = ConnectionMode.DIRECT_DB;
+    public static boolean offlineMode = false;
+
+    private static final String DB_URL  = "jdbc:mysql://localhost:3306/workout_tracker";
+    private static final String DB_USER = "root";
+    private static final String DB_PASS = "youssef123";
+
     private WorkoutManager manager;
 
     private DashboardPanel   dashboardPanel;
@@ -50,28 +70,151 @@ public class WorkoutTrackerGUI extends JFrame {
     public WorkoutTrackerGUI() {
         super("Workout Tracker v7.0");
         initLookAndFeel();
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(900, 620));
 
-        // 1. Ask user for profile
+        // C4: Pre-login report reader
+        int reportChoice = JOptionPane.showConfirmDialog(
+            null,
+            "View your last report before logging in?",
+            "Pre-Login Report",
+            JOptionPane.YES_NO_OPTION
+        );
+        if (reportChoice == JOptionPane.YES_OPTION) {
+            String reportName = JOptionPane.showInputDialog(null, "Enter your username:");
+            if (reportName != null && !reportName.trim().isEmpty()) {
+                try {
+                    String content = FileManager.readReport(reportName.trim());
+                    JTextArea textArea = new JTextArea(content);
+                    textArea.setEditable(false);
+                    textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                    JScrollPane scrollPane = new JScrollPane(textArea);
+                    scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
+                    JOptionPane.showMessageDialog(null, scrollPane,
+                        "Report for " + reportName.trim(), JOptionPane.INFORMATION_MESSAGE);
+                } catch (WorkoutAppException e) {
+                    JOptionPane.showMessageDialog(null, "No report found for this user.",
+                        "Not Found", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        }
+
+        // 1. Ask user for profile and connection mode
         User user = showProfileDialog();
         if (user == null) {
             System.exit(0);
         }
 
-        // 2. Create manager and load saved sessions for this user
+        // 2. Create manager
         manager = new WorkoutManager(user);
-        ArrayList<WorkoutSession> saved = FileManager.loadUserSessions(user.getName());
-        for (WorkoutSession s : saved) {
-            manager.addSession(s);
-        }
+
+        // 3. Auto-load sessions from chosen source
+        autoLoad(user.getName());
 
         buildUI();
         refreshAll();
 
         setSize(1050, 680);
         setLocationRelativeTo(null);
+
+        // 4. Write .bin on clean exit
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                FileManager.saveUserSessions(
+                    manager.getUser().getName(), manager.getAllSessions());
+                dispose();
+                System.exit(0);
+            }
+        });
+
         setVisible(true);
+    }
+
+    private void autoLoad(String userName) {
+        boolean connected = false;
+
+        // Step 1: Test connectivity
+        if (connectionMode == ConnectionMode.DIRECT_DB) {
+            Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+                connected = true;
+            }
+        } else { // VIA_SERVER
+            try {
+                Socket testSocket = new Socket("localhost", 9876);
+                testSocket.close();
+                connected = true;
+            } catch (IOException e) {
+                connected = false;
+            }
+        }
+
+        // C1: Offline sync – if connected and .bin is newer than last sync, push local data first
+        if (connected) {
+            File binFile = new File(FileManager.getUserBinPath(userName));
+            long lastSync = FileManager.readSyncTimestamp(userName);
+            if (binFile.exists() && binFile.lastModified() > lastSync) {
+                ArrayList<WorkoutSession> binSessions = FileManager.loadUserSessions(userName);
+                if (!binSessions.isEmpty()) {
+                    if (connectionMode == ConnectionMode.DIRECT_DB) {
+                        WorkoutSessionDAO dao = new WorkoutSessionDAO();
+                        for (int i = 0; i < binSessions.size(); i++) {
+                            dao.saveSession(binSessions.get(i), userName);
+                        }
+                    } else { // VIA_SERVER
+                        for (int i = 0; i < binSessions.size(); i++) {
+                            WorkoutSession s = binSessions.get(i);
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(userName).append("\n");
+                            sb.append("SESSION|").append(s.getDate()).append("|").append(s.getNotes());
+                            for (Exercise e : s.getExercises()) {
+                                sb.append("\nEXERCISE|").append(e.getName()).append("|")
+                                  .append(e.getType().name()).append("|").append(e.getSets())
+                                  .append("|").append(e.getReps()).append("|")
+                                  .append(e.getWeightKg()).append("|").append(e.getDurationMin());
+                            }
+                            WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
+                        }
+                    }
+                    FileManager.saveSyncTimestamp(userName);
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+                        WorkoutTrackerGUI.this,
+                        "Connection restored. Local changes synced.",
+                        "Sync", JOptionPane.INFORMATION_MESSAGE));
+                }
+            }
+        }
+
+        // Step 2: Normal auto-load
+        ArrayList<WorkoutSession> sessions = new ArrayList<>();
+        if (connected) {
+            WorkoutSessionDAO dao = new WorkoutSessionDAO();
+            sessions = dao.getAllSessions(userName);
+            for (int i = 0; i < sessions.size(); i++) {
+                manager.addSession(sessions.get(i));
+            }
+            FileManager.saveUserSessions(userName, manager.getAllSessions());
+            FileManager.saveSyncTimestamp(userName);
+            offlineMode = false;
+        } else {
+            ArrayList<WorkoutSession> binSessions = FileManager.loadUserSessions(userName);
+            offlineMode = true;
+            if (!binSessions.isEmpty()) {
+                for (int i = 0; i < binSessions.size(); i++) {
+                    manager.addSession(binSessions.get(i));
+                }
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+                    WorkoutTrackerGUI.this,
+                    "Could not connect. Using latest saved version from disk.",
+                    "Offline Mode", JOptionPane.WARNING_MESSAGE));
+            } else {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+                    WorkoutTrackerGUI.this,
+                    "Could not connect and no local data found. Starting fresh.",
+                    "Offline Mode", JOptionPane.WARNING_MESSAGE));
+            }
+        }
     }
 
     // ---------------------------------------------------------------------- UI

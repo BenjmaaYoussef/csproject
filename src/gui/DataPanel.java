@@ -59,20 +59,20 @@ public class DataPanel extends JPanel {
         grid.setPreferredSize(new Dimension(0, 210));
 
         grid.add(buildSection("Phase 3 – File (Text)",  AppColors.PRIMARY,
-            new String[]{"Save to TXT", "Load from TXT", "Export Report"},
-            new Runnable[]{this::saveText, this::loadText, this::exportReport}
+            new String[]{"Export TXT", "Export Report"},
+            new Runnable[]{this::saveText, this::exportReport}
         ));
         grid.add(buildSection("Phase 4 – Serialization", AppColors.SUCCESS,
-            new String[]{"Save Binary", "Load Binary", "Export XML"},
-            new Runnable[]{this::saveBinary, this::loadBinary, this::exportXML}
+            new String[]{"Export XML"},
+            new Runnable[]{this::exportXML}
         ));
         grid.add(buildSection("Phase 5 – Database", new Color(0xF4845F),
-            new String[]{"Save to DB", "Load from DB", "Delete from DB"},
-            new Runnable[]{this::saveToDB, this::loadFromDB, this::deleteFromDB}
+            new String[]{"Delete from DB"},
+            new Runnable[]{this::deleteFromDB}
         ));
         grid.add(buildSection("Phase 6 – Server", AppColors.DANGER,
-            new String[]{"Fetch from Server", "Send to Server", ""},
-            new Runnable[]{this::fetchFromServer, this::sendToServer, null}
+            new String[]{"Fetch from Server", "Send to Server"},
+            new Runnable[]{this::fetchFromServer, this::sendToServer}
         ));
 
         add(grid, BorderLayout.NORTH);
@@ -158,16 +158,6 @@ public class DataPanel extends JPanel {
         log("Saved " + manager.getAllSessions().size() + " session(s) for " + name + " (txt)");
     }
 
-    private void loadText() {
-        String name = manager.getUser().getName();
-        ArrayList<WorkoutSession> loaded = FileManager.loadSessions(name);
-        for (WorkoutSession s : loaded) {
-            manager.addSession(s);
-        }
-        log("Loaded " + loaded.size() + " session(s) for " + name + " (txt)");
-        onDataChanged.run();
-    }
-
     private void exportReport() {
         FileManager.exportReport(manager);
         log("Report exported to report.txt");
@@ -181,16 +171,6 @@ public class DataPanel extends JPanel {
         log("Saved " + manager.getAllSessions().size() + " session(s) for " + name);
     }
 
-    private void loadBinary() {
-        String name = manager.getUser().getName();
-        ArrayList<WorkoutSession> loaded = FileManager.loadUserSessions(name);
-        for (WorkoutSession s : loaded) {
-            manager.addSession(s);
-        }
-        log("Loaded " + loaded.size() + " session(s) for " + name);
-        onDataChanged.run();
-    }
-
     private void exportXML() {
         String name = manager.getUser().getName();
         FileManager.exportXML(name, manager.getAllSessions());
@@ -198,34 +178,6 @@ public class DataPanel extends JPanel {
     }
 
     // ------------------------------------------------------------------ Phase 5: Database
-
-    private void saveToDB() {
-        ArrayList<WorkoutSession> sessions = manager.getAllSessions();
-        if (sessions.isEmpty()) {
-            log("No sessions to save.");
-            return;
-        }
-        String userName = manager.getUser().getName();
-        WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        int saved = 0;
-        for (int i = 0; i < sessions.size(); i++) {
-            if (dao.saveSession(sessions.get(i), userName) == 1) {
-                saved++;
-            }
-        }
-        log("Saved " + saved + " session(s) to database.");
-    }
-
-    private void loadFromDB() {
-        String userName = manager.getUser().getName();
-        WorkoutSessionDAO dao = new WorkoutSessionDAO();
-        ArrayList<WorkoutSession> sessions = dao.getAllSessions(userName);
-        for (WorkoutSession s : sessions) {
-            manager.addSession(s);
-        }
-        log("Loaded " + sessions.size() + " session(s) from database.");
-        onDataChanged.run();
-    }
 
     private void deleteFromDB() {
         String date = JOptionPane.showInputDialog(this,

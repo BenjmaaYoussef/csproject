@@ -2,6 +2,7 @@ package util;
 
 import exception.DuplicateExerciseException;
 import exception.InvalidExerciseException;
+import exception.WorkoutAppException;
 import model.Exercise;
 import model.ExerciseType;
 import model.WorkoutManager;
@@ -209,13 +210,144 @@ public class FileManager {
         return users;
     }
 
+    // ------------------------------------------------------------------ Parse session from text
+
+    /**
+     * Parses a pipe-delimited session block into a WorkoutSession.
+     * Format: SESSION|date|notes\nEXERCISE|name|type|sets|reps|weightKg|durationMin\n...
+     */
+    public static WorkoutSession parseSessionFromText(String data) {
+        String[] lines = data.split("\n");
+        WorkoutSession session = null;
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (line.startsWith("SESSION|")) {
+                String[] parts = line.split("\\|", 3);
+                String date  = parts[1];
+                String notes = parts.length > 2 ? parts[2] : "";
+                session = new WorkoutSession(date, notes);
+            } else if (line.startsWith("EXERCISE|") && session != null) {
+                String[] parts = line.split("\\|");
+                try {
+                    String name       = parts[1];
+                    ExerciseType type = ExerciseType.valueOf(parts[2]);
+                    int sets          = Integer.parseInt(parts[3]);
+                    int reps          = Integer.parseInt(parts[4]);
+                    double weightKg   = Double.parseDouble(parts[5]);
+                    int durationMin   = Integer.parseInt(parts[6]);
+                    Exercise e = new Exercise(name, sets, reps, weightKg, durationMin, type);
+                    session.addExercise(e);
+                } catch (InvalidExerciseException e) {
+                    System.err.println("An error occurred.");
+                    e.printStackTrace();
+                } catch (DuplicateExerciseException e) {
+                    System.err.println("An error occurred.");
+                    e.printStackTrace();
+                }
+            }
+        }
+        return session;
+    }
+
+    // ------------------------------------------------------------------ Sync timestamp
+
+    /** Returns the sync-timestamp filename for a given user. */
+    private static String userSyncFile(String userName) {
+        return "sync_" + userName.replaceAll("\\s+", "_") + ".txt";
+    }
+
+    /** Returns the binary filename for external callers (e.g. to check lastModified). */
+    public static String getUserBinPath(String userName) {
+        return "workouts_" + userName.replaceAll("\\s+", "_") + ".bin";
+    }
+
+    /** Writes the current time (ms) to sync_<userName>.txt. */
+    public static void saveSyncTimestamp(String userName) {
+        String path = userSyncFile(userName);
+        try {
+            FileWriter writer = new FileWriter(path);
+            writer.write(String.valueOf(System.currentTimeMillis()));
+            writer.close();
+        } catch (IOException e) {
+            System.err.println("An error occurred.");
+            e.printStackTrace();
+        }
+    }
+
+    /** Reads the last sync timestamp from sync_<userName>.txt; returns 0 if absent. */
+    public static long readSyncTimestamp(String userName) {
+        String path = userSyncFile(userName);
+        File file = new File(path);
+        if (!file.exists()) {
+            return 0;
+        }
+        try {
+            Scanner scanner = new Scanner(file);
+            if (scanner.hasNextLong()) {
+                long ts = scanner.nextLong();
+                scanner.close();
+                return ts;
+            }
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            System.err.println("An error occurred.");
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // ------------------------------------------------------------------ Report reading
+
+    /** Returns the report filename for a given user. */
+    private static String userReportFile(String userName) {
+        return "report_" + userName.replaceAll("\\s+", "_") + ".txt";
+    }
+
+    /** CLI use: reads report_<userName>.txt and prints each line to System.out. */
+    public static void readAndPrintReport(String userName) throws WorkoutAppException {
+        File file = new File(userReportFile(userName));
+        if (!file.exists()) {
+            throw new WorkoutAppException("Report file not found for user: " + userName);
+        }
+        try {
+            Scanner scanner = new Scanner(file);
+            while (scanner.hasNextLine()) {
+                System.out.println(scanner.nextLine());
+            }
+            scanner.close();
+        } catch (IOException e) {
+            System.err.println("An error occurred.");
+            e.printStackTrace();
+        }
+    }
+
+    /** GUI use: reads report_<userName>.txt and returns contents as a String. */
+    public static String readReport(String userName) throws WorkoutAppException {
+        File file = new File(userReportFile(userName));
+        if (!file.exists()) {
+            throw new WorkoutAppException("Report file not found for user: " + userName);
+        }
+        StringBuilder sb = new StringBuilder();
+        try {
+            Scanner scanner = new Scanner(file);
+            while (scanner.hasNextLine()) {
+                sb.append(scanner.nextLine()).append("\n");
+            }
+            scanner.close();
+        } catch (IOException e) {
+            System.err.println("An error occurred.");
+            e.printStackTrace();
+        }
+        return sb.toString();
+    }
+
     // ------------------------------------------------------------------ Export report
 
     /**
      * Exports a readable workout history report to report_<name>.txt.
      */
     public static void exportReport(WorkoutManager manager) {
-        String path = "report_" + manager.getUser().getName().replaceAll("\\s+", "_") + ".txt";
+        String path = userReportFile(manager.getUser().getName());
         try {
             FileWriter writer = new FileWriter(path);
             writer.write("========================================\n");
