@@ -13,7 +13,7 @@ public class WorkoutSessionDAO {
 
     private static final String URL       = "jdbc:mysql://localhost:3306/workout_tracker";
     private static final String USER_NAME = "root";
-    private static final String PASSWORD  = "3152005medA";
+    private static final String PASSWORD  = "youssef123";
 
     public int saveSession(WorkoutSession session, String userName) {
         Connection connection = null;
