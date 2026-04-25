@@ -50,10 +50,11 @@ public class WorkoutClient {
         System.out.println("WorkoutClient terminated.");
     }
 
-    public static void sendAndReceive(String command) {
+    public static String sendAndReceive(String command) {
         Socket socket = null;
         DataOutputStream out = null;
         DataInputStream in = null;
+        String response = "ERROR: No response.";
         try {
             socket = new Socket(HOST, PORT);
             System.out.println("Connected to " + socket.getRemoteSocketAddress());
@@ -61,7 +62,7 @@ public class WorkoutClient {
             in  = new DataInputStream(socket.getInputStream());
             out.writeUTF(command);
             out.flush();
-            String response = in.readUTF();
+            response = in.readUTF();
             System.out.println("Server response:\n" + response);
             in.close();
             out.close();
@@ -70,6 +71,7 @@ public class WorkoutClient {
             System.err.println("An error occurred.");
             e.printStackTrace();
         }
+        return response;
     }
 
     // Builds a pipe-delimited session string matching the FileManager (Phase 3) format.

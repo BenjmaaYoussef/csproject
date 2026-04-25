@@ -146,7 +146,7 @@ public class FileManager {
             os.writeObject(sessions);
             os.close();
             fo.close();
-            System.out.println("Sessions saved to " + path + ".");
+            System.out.println("Cache updated: " + path + ".");
         } catch (Exception e) {
             System.err.println("An error occurred while saving sessions for " + userName + ".");
             e.printStackTrace();
@@ -166,7 +166,7 @@ public class FileManager {
             sessions = (ArrayList<WorkoutSession>) ois.readObject();
             ois.close();
             fi.close();
-            System.out.println("Loaded " + sessions.size() + " session(s) for " + userName + ".");
+            System.out.println("Local cache: " + sessions.size() + " session(s) for " + userName + ".");
         } catch (Exception e) {
             System.err.println("An error occurred while loading sessions for " + userName + ".");
             e.printStackTrace();

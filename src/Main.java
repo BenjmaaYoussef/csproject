@@ -33,7 +33,7 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("╔══════════════════════════════╗");
-        System.out.println("║     Workout Tracker v6.0     ║");
+        System.out.println("║       Workout Tracker        ║");
         System.out.println("╚══════════════════════════════╝");
 
         // C3: Pre-login report reader
@@ -88,6 +88,9 @@ public class Main {
         }
         // B7: Write .bin on clean exit
         FileManager.saveUserSessions(manager.getUser().getName(), manager.getAllSessions());
+        if (!offlineMode) {
+            FileManager.saveSyncTimestamp(manager.getUser().getName());
+        }
         System.out.println("Goodbye!");
     }
 
@@ -157,35 +160,74 @@ public class Main {
             }
         }
 
+        File binFile = new File(FileManager.getUserBinPath(userName));
+        long lastSync = FileManager.readSyncTimestamp(userName);
+
         // C1: Offline sync – if connected and .bin is newer than last sync, push local data first
         if (connected) {
-            File binFile = new File(FileManager.getUserBinPath(userName));
-            long lastSync = FileManager.readSyncTimestamp(userName);
             if (binFile.exists() && binFile.lastModified() > lastSync) {
                 ArrayList<WorkoutSession> binSessions = FileManager.loadUserSessions(userName);
                 if (!binSessions.isEmpty()) {
+                    boolean allSynced = true;
+                    int pushedCount = 0;
                     if (connectionMode == ConnectionMode.DIRECT_DB) {
                         WorkoutSessionDAO dao = new WorkoutSessionDAO();
-                        for (int i = 0; i < binSessions.size(); i++) {
-                            dao.saveSession(binSessions.get(i), userName);
+                        // Fetch existing dates to avoid re-inserting already-synced sessions
+                        ArrayList<WorkoutSession> dbSessions = dao.getAllSessions(userName);
+                        ArrayList<String> existingDates = new ArrayList<>();
+                        for (int i = 0; i < dbSessions.size(); i++) {
+                            existingDates.add(dbSessions.get(i).getDate());
                         }
-                    } else { // VIA_SERVER
                         for (int i = 0; i < binSessions.size(); i++) {
                             WorkoutSession s = binSessions.get(i);
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(userName).append("\n");
-                            sb.append("SESSION|").append(s.getDate()).append("|").append(s.getNotes());
-                            for (Exercise e : s.getExercises()) {
-                                sb.append("\nEXERCISE|").append(e.getName()).append("|")
-                                  .append(e.getType().name()).append("|").append(e.getSets())
-                                  .append("|").append(e.getReps()).append("|")
-                                  .append(e.getWeightKg()).append("|").append(e.getDurationMin());
+                            if (!existingDates.contains(s.getDate())) {
+                                int result = dao.saveSession(s, userName);
+                                if (result == 1) {
+                                    pushedCount++;
+                                } else {
+                                    allSynced = false;
+                                }
                             }
-                            WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
+                        }
+                    } else { // VIA_SERVER
+                        // Fetch existing dates via server to avoid re-inserting already-synced sessions
+                        String existingData = WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName);
+                        ArrayList<String> existingDates = new ArrayList<>();
+                        if (!existingData.equals("NONE") && !existingData.startsWith("ERROR")) {
+                            String[] lines = existingData.split("\n");
+                            for (int i = 0; i < lines.length; i++) {
+                                if (lines[i].startsWith("SESSION|")) {
+                                    String[] parts = lines[i].split("\\|", 3);
+                                    existingDates.add(parts[1]);
+                                }
+                            }
+                        }
+                        for (int i = 0; i < binSessions.size(); i++) {
+                            WorkoutSession s = binSessions.get(i);
+                            if (!existingDates.contains(s.getDate())) {
+                                StringBuilder sb = new StringBuilder();
+                                sb.append(userName).append("\n");
+                                sb.append("SESSION|").append(s.getDate()).append("|").append(s.getNotes());
+                                for (Exercise e : s.getExercises()) {
+                                    sb.append("\nEXERCISE|").append(e.getName()).append("|")
+                                      .append(e.getType().name()).append("|").append(e.getSets())
+                                      .append("|").append(e.getReps()).append("|")
+                                      .append(e.getWeightKg()).append("|").append(e.getDurationMin());
+                                }
+                                String response = WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
+                                if (response.startsWith("OK")) {
+                                    pushedCount++;
+                                } else {
+                                    allSynced = false;
+                                }
+                            }
                         }
                     }
-                    FileManager.saveSyncTimestamp(userName);
-                    System.out.println("Connection restored. Local changes synced.");
+                    if (pushedCount > 0 && allSynced) {
+                        FileManager.saveSyncTimestamp(userName);
+                        lastSync = FileManager.readSyncTimestamp(userName);
+                        System.out.println("Connection restored. " + pushedCount + " session(s) synced to server.");
+                    }
                 }
             }
         }
@@ -193,11 +235,47 @@ public class Main {
         // Step 2: Normal auto-load
         ArrayList<WorkoutSession> sessions = new ArrayList<>();
         if (connected) {
-            WorkoutSessionDAO dao = new WorkoutSessionDAO();
-            sessions = dao.getAllSessions(userName);
+            if (connectionMode == ConnectionMode.DIRECT_DB) {
+                WorkoutSessionDAO dao = new WorkoutSessionDAO();
+                sessions = dao.getAllSessions(userName);
+            } else { // VIA_SERVER
+                String response = WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName);
+                if (!response.equals("NONE") && !response.startsWith("ERROR")) {
+                    String[] lines = response.split("\n");
+                    WorkoutSession current = null;
+                    for (int i = 0; i < lines.length; i++) {
+                        String line = lines[i].trim();
+                        if (line.startsWith("SESSION|")) {
+                            String[] parts = line.split("\\|", 3);
+                            current = new WorkoutSession(parts[1], parts.length > 2 ? parts[2] : "");
+                            sessions.add(current);
+                        } else if (line.startsWith("EXERCISE|") && current != null) {
+                            String[] parts = line.split("\\|");
+                            try {
+                                String name = parts[1];
+                                ExerciseType type = ExerciseType.valueOf(parts[2]);
+                                int sets = Integer.parseInt(parts[3]);
+                                int reps = Integer.parseInt(parts[4]);
+                                double weight = Double.parseDouble(parts[5]);
+                                int duration = Integer.parseInt(parts[6]);
+                                Exercise ex = new Exercise(name, sets, reps, weight, duration, type);
+                                current.addExercise(ex);
+                            } catch (InvalidExerciseException e) {
+                                System.err.println("An error occurred.");
+                                e.printStackTrace();
+                            } catch (DuplicateExerciseException e) {
+                                System.err.println("An error occurred.");
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            }
             for (int i = 0; i < sessions.size(); i++) {
                 manager.addSession(sessions.get(i));
             }
+            String source = (connectionMode == ConnectionMode.DIRECT_DB) ? "database" : "server";
+            System.out.println("Fetched " + sessions.size() + " session(s) from " + source + ".");
             FileManager.saveUserSessions(userName, manager.getAllSessions());
             FileManager.saveSyncTimestamp(userName);
             offlineMode = false;
@@ -208,7 +286,7 @@ public class Main {
                 for (int i = 0; i < binSessions.size(); i++) {
                     manager.addSession(binSessions.get(i));
                 }
-                System.out.println("Could not connect. Using latest saved version from disk.");
+                System.out.println("Could not connect. Running in offline mode.");
             } else {
                 System.out.println("Could not connect and no local data found. Starting fresh.");
             }

@@ -1,6 +1,7 @@
 package network;
 
 import db.WorkoutSessionDAO;
+import model.Exercise;
 import model.WorkoutSession;
 import util.FileManager;
 
@@ -61,11 +62,19 @@ public class WorkoutServer {
             WorkoutSessionDAO dao = new WorkoutSessionDAO();
             ArrayList<WorkoutSession> sessions = dao.getAllSessions(userName);
             if (sessions.isEmpty()) {
-                return "No sessions found.";
+                return "NONE";
             }
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < sessions.size(); i++) {
-                sb.append(sessions.get(i).toString());
+                WorkoutSession s = sessions.get(i);
+                sb.append("SESSION|").append(s.getDate()).append("|").append(s.getNotes()).append("\n");
+                ArrayList<Exercise> exercises = s.getExercises();
+                for (int j = 0; j < exercises.size(); j++) {
+                    Exercise e = exercises.get(j);
+                    sb.append("EXERCISE|").append(e.getName()).append("|").append(e.getType().name())
+                      .append("|").append(e.getSets()).append("|").append(e.getReps())
+                      .append("|").append(e.getWeightKg()).append("|").append(e.getDurationMin()).append("\n");
+                }
             }
             return sb.toString();
         } else if (command.startsWith("ADD_SESSION:")) {
