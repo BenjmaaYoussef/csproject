@@ -75,9 +75,13 @@ public class Main {
                 case 7  -> viewUserProfile();
                 case 8  -> exportReport();
                 case 9  -> exportXML();
-                case 10 -> deleteSessionFromDB();
-                case 11 -> fetchSessionsFromServer();
-                case 12 -> sendSessionToServer();
+                case 10 -> {
+                    if (connectionMode == ConnectionMode.DIRECT_DB) {
+                        deleteSessionFromDB();
+                    } else {
+                        System.out.println("Not available in Via Server mode.");
+                    }
+                }
                 case 0  -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }
@@ -236,7 +240,8 @@ public class Main {
     // ------------------------------------------------------------------ Menus
 
     private static void printMainMenu() {
-        System.out.println("\n==============================");
+        String modeLabel = (connectionMode == ConnectionMode.DIRECT_DB) ? "Direct DB" : "Via Server";
+        System.out.println("\n============================== [" + modeLabel + "]");
         System.out.println(" 1. Log a new workout session");
         System.out.println(" 2. View all sessions (sorted by date)");
         System.out.println(" 3. Find session by date");
@@ -244,13 +249,13 @@ public class Main {
         System.out.println(" 5. View personal records");
         System.out.println(" 6. View summary");
         System.out.println(" 7. View user profile");
+        System.out.println("--- Exports ---");
         System.out.println(" 8. Export report to file");
         System.out.println(" 9. Export sessions to XML");
-        System.out.println("--- Database ---");
-        System.out.println("10. Delete a session from database");
-        System.out.println("--- Client-Server ---");
-        System.out.println("11. Fetch all sessions from server");
-        System.out.println("12. Send a session to server");
+        if (connectionMode == ConnectionMode.DIRECT_DB) {
+            System.out.println("--- Database ---");
+            System.out.println("10. Delete a session from database");
+        }
         System.out.println(" 0. Exit");
         System.out.println("==============================");
     }
@@ -424,42 +429,6 @@ public class Main {
         } else {
             System.out.println("No session found for date: " + date);
         }
-    }
-
-    // ------------------------------------------------------------------ Option 11: Fetch from server
-
-    private static void fetchSessionsFromServer() {
-        System.out.println("\n--- Fetching sessions from server ---");
-        WorkoutClient.sendAndReceive("GET_SESSIONS:" + manager.getUser().getName());
-    }
-
-    // ------------------------------------------------------------------ Option 12: Send session to server
-
-    private static void sendSessionToServer() {
-        System.out.println("\n--- Send session to server ---");
-        String date  = readString("Date (yyyy-MM-dd): ");
-        String notes = readString("Notes (or press Enter to skip): ");
-        StringBuilder sb = new StringBuilder();
-        sb.append(manager.getUser().getName()).append("\n");
-        sb.append("SESSION|").append(date).append("|").append(notes);
-        boolean addingExercises = true;
-        while (addingExercises) {
-            System.out.println("\n  Add exercise? (1=Yes, 0=Done)");
-            int choice = readInt("  > ");
-            if (choice != 1) {
-                addingExercises = false;
-                continue;
-            }
-            try {
-                Exercise e = promptExercise();
-                sb.append("\nEXERCISE|").append(e.getName()).append("|").append(e.getType().name())
-                  .append("|").append(e.getSets()).append("|").append(e.getReps())
-                  .append("|").append(e.getWeightKg()).append("|").append(e.getDurationMin());
-            } catch (InvalidExerciseException ex) {
-                System.out.println("  Error: " + ex.getMessage());
-            }
-        }
-        WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString());
     }
 
     // ------------------------------------------------------------------ Input helpers
