@@ -203,6 +203,8 @@ public class DataPanel extends JPanel {
         inner.add(Box.createVerticalGlue());
         inner.add(Box.createVerticalStrut(12));
 
+        // Not using setEnabled(false) — Metal L&F overrides setBackground() on disabled buttons.
+        // The grey colors below already communicate the unavailable state visually.
         JButton btn = new JButton("Not Available");
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setBackground(new Color(0xDDDDDD));
@@ -210,9 +212,9 @@ public class DataPanel extends JPanel {
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setOpaque(true);
-        btn.setEnabled(false);
         btn.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
         btn.setAlignmentX(LEFT_ALIGNMENT);
+        // No action listener — clicking does nothing
         inner.add(btn);
 
         card.add(inner, BorderLayout.CENTER);

@@ -236,10 +236,18 @@ public class AddWorkoutPanel extends JPanel {
 
     private void updateFieldVisibility() {
         boolean isCardio = "CARDIO".equals(typeCombo.getSelectedItem());
-        setsField.setEnabled(!isCardio);
-        repsField.setEnabled(!isCardio);
-        weightField.setEnabled(!isCardio);
-        durationField.setEnabled(isCardio);
+        setFieldEnabled(setsField,     !isCardio);
+        setFieldEnabled(repsField,     !isCardio);
+        setFieldEnabled(weightField,   !isCardio);
+        setFieldEnabled(durationField,  isCardio);
+    }
+
+    /** Enables/disables a field and updates its visual state explicitly,
+     *  since Metal L&F ignores setBackground() when rendering disabled state. */
+    private void setFieldEnabled(JTextField field, boolean enabled) {
+        field.setEnabled(enabled);
+        field.setBackground(enabled ? Color.WHITE : new Color(0xEEEEEE));
+        field.setForeground(enabled ? AppColors.TEXT_DARK : AppColors.TEXT_LIGHT);
     }
 
     private void addExercise() {
