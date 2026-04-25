@@ -264,7 +264,7 @@ public class WorkoutTrackerGUI extends JFrame {
         tabs.addTab("  Add Workout  ", addWorkoutPanel);
         tabs.addTab("  History  ",    historyPanel);
         tabs.addTab("  Profile  ",    profilePanel);
-        tabs.addTab("  Data & Sync  ", dataPanel);
+        tabs.addTab("  Exports  ",      dataPanel);
 
         // Refresh panels when their tab is selected
         tabs.addChangeListener(e -> {

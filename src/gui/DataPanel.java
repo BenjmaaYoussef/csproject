@@ -3,261 +3,304 @@ package gui;
 import db.WorkoutSessionDAO;
 import model.WorkoutManager;
 import model.WorkoutSession;
-import network.WorkoutClient;
 import util.FileManager;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
- * Data & Sync tab – exposes all I/O operations from Phases 3–6 in the GUI.
+ * Exports tab – manual export and database management operations.
  *
- *  Phase 3 (File Handling)  : save text, load text, export report
- *  Phase 4 (Serialization)  : save binary, load binary, export XML
- *  Phase 5 (Database)       : save to DB, load from DB, delete from DB
- *  Phase 6 (Client-Server)  : fetch sessions from server, send session to server
+ * Auto-save/auto-load (Phases B & C) handle all routine persistence.
+ * This tab provides:
+ *   - Export TXT  : human-readable pipe-delimited text file (Phase 3)
+ *   - Export XML  : machine-readable XML archive (Phase 4)
+ *   - Export Report : formatted plain-text summary report (Phase 3)
+ *   - Delete from DB : remove a specific session by date (Phase 5)
  */
 public class DataPanel extends JPanel {
 
     private final WorkoutManager manager;
     private final Runnable onDataChanged;
 
-    private JTextArea outputArea;
+    private JTextArea logArea;
 
     public DataPanel(WorkoutManager manager, Runnable onDataChanged) {
         this.manager       = manager;
         this.onDataChanged = onDataChanged;
         setBackground(AppColors.BG);
-        setLayout(new BorderLayout(0, 16));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setLayout(new BorderLayout(0, 0));
         buildUI();
     }
 
+    // -------------------------------------------------------------------------
+    // UI construction
+    // -------------------------------------------------------------------------
+
     private void buildUI() {
-        JLabel title = new JLabel("Data & Sync");
-        title.setFont(AppColors.FONT_TITLE);
-        title.setForeground(AppColors.TEXT_DARK);
-        title.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
-        add(title, BorderLayout.NORTH);
-
-        // ---- Button grid (4 sections)
-        JPanel grid = new JPanel(new GridLayout(1, 4, 12, 0));
-        grid.setBackground(AppColors.BG);
-        grid.setPreferredSize(new Dimension(0, 210));
-
-        grid.add(buildSection("Phase 3 – File (Text)",  AppColors.PRIMARY,
-            new String[]{"Export TXT", "Export Report"},
-            new Runnable[]{this::saveText, this::exportReport}
-        ));
-        grid.add(buildSection("Phase 4 – Serialization", AppColors.SUCCESS,
-            new String[]{"Export XML"},
-            new Runnable[]{this::exportXML}
-        ));
-        grid.add(buildSection("Phase 5 – Database", new Color(0xF4845F),
-            new String[]{"Delete from DB"},
-            new Runnable[]{this::deleteFromDB}
-        ));
-        grid.add(buildSection("Phase 6 – Server", AppColors.DANGER,
-            new String[]{"Fetch from Server", "Send to Server"},
-            new Runnable[]{this::fetchFromServer, this::sendToServer}
-        ));
-
-        add(grid, BorderLayout.NORTH);
-
-        // ---- Output log
-        outputArea = new JTextArea();
-        outputArea.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-        outputArea.setEditable(false);
-        outputArea.setBackground(new Color(0xFAFAFA));
-        outputArea.setForeground(AppColors.TEXT_DARK);
-        outputArea.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-
-        JPanel logCard = new JPanel(new BorderLayout());
-        logCard.setBackground(AppColors.CARD);
-        logCard.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(0xEEEEEE)),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0)
-        ));
-
-        JLabel logHeader = new JLabel("  Output Log");
-        logHeader.setFont(AppColors.FONT_SMALL);
-        logHeader.setForeground(AppColors.TEXT_LIGHT);
-        logHeader.setOpaque(true);
-        logHeader.setBackground(new Color(0xF5F5F5));
-        logHeader.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
-        logCard.add(logHeader, BorderLayout.NORTH);
-        logCard.add(new JScrollPane(outputArea), BorderLayout.CENTER);
-
-        add(logCard, BorderLayout.CENTER);
+        add(buildTop(),    BorderLayout.NORTH);
+        add(buildCenter(), BorderLayout.CENTER);
     }
 
-    private JPanel buildSection(String heading, Color accent, String[] labels, Runnable[] actions) {
-        JPanel card = new JPanel(new BorderLayout(0, 10));
-        card.setBackground(AppColors.CARD);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(0xEEEEEE)),
-            BorderFactory.createEmptyBorder(14, 14, 14, 14)
+    /** Page header with title and subtitle explaining what this tab does. */
+    private JPanel buildTop() {
+        JPanel top = new JPanel(new BorderLayout());
+        top.setBackground(AppColors.BG);
+        top.setBorder(BorderFactory.createEmptyBorder(24, 24, 0, 24));
+
+        JLabel title = new JLabel("Exports & Data");
+        title.setFont(AppColors.FONT_TITLE);
+        title.setForeground(AppColors.TEXT_DARK);
+        top.add(title, BorderLayout.NORTH);
+
+        JLabel sub = new JLabel(
+            "Sessions are saved automatically. Use these controls to export files or manage database records.");
+        sub.setFont(AppColors.FONT_BODY);
+        sub.setForeground(AppColors.TEXT_LIGHT);
+        sub.setBorder(BorderFactory.createEmptyBorder(4, 0, 16, 0));
+        top.add(sub, BorderLayout.CENTER);
+
+        return top;
+    }
+
+    /** Card grid (top) + activity log (bottom). */
+    private JPanel buildCenter() {
+        JPanel center = new JPanel(new BorderLayout(0, 16));
+        center.setBackground(AppColors.BG);
+        center.setBorder(BorderFactory.createEmptyBorder(16, 24, 24, 24));
+
+        center.add(buildCards(), BorderLayout.NORTH);
+        center.add(buildLog(),   BorderLayout.CENTER);
+
+        return center;
+    }
+
+    /** Three export cards + one danger card in a horizontal row. */
+    private JPanel buildCards() {
+        JPanel row = new JPanel(new GridLayout(1, 4, 14, 0));
+        row.setBackground(AppColors.BG);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+
+        row.add(buildCard(
+            "Text Export",
+            AppColors.PRIMARY,
+            "Export TXT",
+            "Saves a pipe-delimited .txt file you\ncan re-import or open in a text editor.",
+            this::exportTXT
         ));
 
+        row.add(buildCard(
+            "XML Archive",
+            AppColors.SUCCESS,
+            "Export XML",
+            "Produces a structured XML file useful\nfor backups or external tools.",
+            this::exportXML
+        ));
+
+        row.add(buildCard(
+            "Summary Report",
+            new Color(0xF4845F),
+            "Export Report",
+            "Generates a human-readable report_<name>.txt\nsummarising all your sessions and exercises.",
+            this::exportReport
+        ));
+
+        row.add(buildCard(
+            "Database",
+            AppColors.DANGER,
+            "Delete Session",
+            "Permanently removes a session from the\ndatabase by date. Cannot be undone.",
+            this::deleteFromDB
+        ));
+
+        return row;
+    }
+
+    /**
+     * Builds a single card with a coloured top border, heading, description,
+     * and a single action button.
+     */
+    private JPanel buildCard(String heading, Color accent,
+                             String btnLabel, String description,
+                             Runnable action) {
+        JPanel card = new JPanel(new BorderLayout(0, 0));
+        card.setBackground(AppColors.CARD);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(3, 0, 0, 0, accent),
+            BorderFactory.createLineBorder(new Color(0xE8E8E8))
+        ));
+
+        // ---- inner padding panel
+        JPanel inner = new JPanel();
+        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+        inner.setBackground(AppColors.CARD);
+        inner.setBorder(BorderFactory.createEmptyBorder(14, 16, 16, 16));
+
+        // heading
         JLabel title = new JLabel(heading);
         title.setFont(AppColors.FONT_HEADING);
         title.setForeground(accent);
-        card.add(title, BorderLayout.NORTH);
+        title.setAlignmentX(LEFT_ALIGNMENT);
+        inner.add(title);
+        inner.add(Box.createVerticalStrut(8));
 
-        JPanel buttons = new JPanel(new GridLayout(labels.length, 1, 0, 8));
-        buttons.setBackground(AppColors.CARD);
+        // description (multi-line via html)
+        String htmlDesc = "<html><body style='width:120px;color:#8D99AE;font-family:Segoe UI;font-size:11px'>"
+            + description.replace("\n", "<br>") + "</body></html>";
+        JLabel desc = new JLabel(htmlDesc);
+        desc.setAlignmentX(LEFT_ALIGNMENT);
+        inner.add(desc);
+        inner.add(Box.createVerticalGlue());
+        inner.add(Box.createVerticalStrut(12));
 
-        for (int i = 0; i < labels.length; i++) {
-            if (labels[i] == null || labels[i].isEmpty()) {
-                buttons.add(new JLabel()); // spacer
-                continue;
-            }
-            JButton btn = sectionButton(labels[i], accent);
-            final Runnable action = actions[i];
-            if (action != null) {
-                btn.addActionListener(e -> action.run());
-            }
-            buttons.add(btn);
-        }
-
-        card.add(buttons, BorderLayout.CENTER);
-        return card;
-    }
-
-    private JButton sectionButton(String text, Color accent) {
-        JButton btn = new JButton(text);
-        btn.setFont(AppColors.FONT_BODY);
+        // action button
+        JButton btn = new JButton(btnLabel);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setBackground(accent);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setOpaque(true);
-        btn.setBorder(BorderFactory.createEmptyBorder(7, 10, 7, 10));
         btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        return btn;
+        btn.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
+        btn.setAlignmentX(LEFT_ALIGNMENT);
+        btn.addActionListener(e -> action.run());
+
+        // hover effect
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            Color base = accent;
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                btn.setBackground(base.darker());
+            }
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                btn.setBackground(base);
+            }
+        });
+
+        inner.add(btn);
+        card.add(inner, BorderLayout.CENTER);
+        return card;
     }
 
-    // ------------------------------------------------------------------ Phase 3: File (Text)
+    /** Activity log area at the bottom of the tab. */
+    private JPanel buildLog() {
+        JPanel logCard = new JPanel(new BorderLayout());
+        logCard.setBackground(AppColors.CARD);
+        logCard.setBorder(BorderFactory.createLineBorder(new Color(0xE8E8E8)));
 
-    private void saveText() {
+        // header row with label + clear button
+        JPanel logHeader = new JPanel(new BorderLayout());
+        logHeader.setBackground(new Color(0xF7F8FA));
+        logHeader.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0xE8E8E8)),
+            BorderFactory.createEmptyBorder(6, 12, 6, 12)
+        ));
+
+        JLabel logTitle = new JLabel("Activity Log");
+        logTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        logTitle.setForeground(AppColors.TEXT_MID);
+        logHeader.add(logTitle, BorderLayout.WEST);
+
+        JLabel hint = new JLabel("Results of export operations appear here");
+        hint.setFont(AppColors.FONT_SMALL);
+        hint.setForeground(AppColors.TEXT_LIGHT);
+        logHeader.add(hint, BorderLayout.CENTER);
+
+        JButton clearBtn = new JButton("Clear");
+        clearBtn.setFont(AppColors.FONT_SMALL);
+        clearBtn.setForeground(AppColors.TEXT_LIGHT);
+        clearBtn.setBackground(new Color(0xF7F8FA));
+        clearBtn.setBorderPainted(false);
+        clearBtn.setFocusPainted(false);
+        clearBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        clearBtn.addActionListener(e -> logArea.setText(""));
+        logHeader.add(clearBtn, BorderLayout.EAST);
+
+        logCard.add(logHeader, BorderLayout.NORTH);
+
+        logArea = new JTextArea();
+        logArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        logArea.setEditable(false);
+        logArea.setBackground(new Color(0xFDFDFD));
+        logArea.setForeground(AppColors.TEXT_DARK);
+        logArea.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
+
+        logCard.add(new JScrollPane(logArea), BorderLayout.CENTER);
+        return logCard;
+    }
+
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
+
+    private void exportTXT() {
         String name = manager.getUser().getName();
+        int count = manager.getAllSessions().size();
         FileManager.saveSessions(name, manager.getAllSessions());
-        log("Saved " + manager.getAllSessions().size() + " session(s) for " + name + " (txt)");
-    }
-
-    private void exportReport() {
-        FileManager.exportReport(manager);
-        log("Report exported to report.txt");
-    }
-
-    // ------------------------------------------------------------------ Phase 4: Serialization
-
-    private void saveBinary() {
-        String name = manager.getUser().getName();
-        FileManager.saveUserSessions(name, manager.getAllSessions());
-        log("Saved " + manager.getAllSessions().size() + " session(s) for " + name);
+        log("OK", "workouts_" + name + ".txt — " + count + " session(s) written.");
     }
 
     private void exportXML() {
         String name = manager.getUser().getName();
+        int count = manager.getAllSessions().size();
         FileManager.exportXML(name, manager.getAllSessions());
-        log("Sessions exported to workouts_" + name.replaceAll("\\s+", "_") + ".xml");
+        log("OK", "workouts_" + name.replaceAll("\\s+", "_") + ".xml — " + count + " session(s) written.");
     }
 
-    // ------------------------------------------------------------------ Phase 5: Database
+    private void exportReport() {
+        FileManager.exportReport(manager);
+        String name = manager.getUser().getName();
+        log("OK", "report_" + name + ".txt — summary report written.");
+    }
 
     private void deleteFromDB() {
         String date = JOptionPane.showInputDialog(this,
-            "Enter session date to delete (yyyy-MM-dd):", "Delete from DB",
-            JOptionPane.QUESTION_MESSAGE);
+            "Enter the session date to delete (yyyy-MM-dd):",
+            "Delete Session from Database",
+            JOptionPane.WARNING_MESSAGE);
         if (date == null || date.trim().isEmpty()) return;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Permanently delete the session on " + date.trim() + " from the database?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
         String userName = manager.getUser().getName();
         WorkoutSessionDAO dao = new WorkoutSessionDAO();
         int result = dao.deleteSession(date.trim(), userName);
         if (result == 1) {
-            log("Deleted session for " + date + " from database.");
+            log("DELETED", "Session on " + date.trim() + " removed from database.");
+            if (onDataChanged != null) onDataChanged.run();
         } else {
-            log("No session found for " + date + " in database.");
+            log("NOT FOUND", "No session for " + date.trim() + " found in database.");
         }
     }
 
-    // ------------------------------------------------------------------ Phase 6: Client-Server
+    // -------------------------------------------------------------------------
+    // Logging helpers
+    // -------------------------------------------------------------------------
 
-    private void fetchFromServer() {
-        String userName = manager.getUser().getName();
-        log("Sending GET_SESSIONS to server for " + userName + "...");
-        String response = capture(() -> WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName));
-        log(response);
-    }
-
-    private void sendToServer() {
-        String date = JOptionPane.showInputDialog(this,
-            "Date of session to send (yyyy-MM-dd):", "Send to Server",
-            JOptionPane.QUESTION_MESSAGE);
-        if (date == null || date.trim().isEmpty()) return;
-
-        ArrayList<WorkoutSession> sessions = manager.getAllSessions();
-        WorkoutSession toSend = null;
-        for (int i = 0; i < sessions.size(); i++) {
-            if (sessions.get(i).getDate().equals(date.trim())) {
-                toSend = sessions.get(i);
-                break;
-            }
-        }
-        if (toSend == null) {
-            log("No session found for date: " + date);
-            return;
-        }
-
-        String userName = manager.getUser().getName();
-        StringBuilder sb = new StringBuilder();
-        sb.append(userName).append("\n");
-        sb.append("SESSION|").append(toSend.getDate()).append("|").append(toSend.getNotes());
-        for (model.Exercise e : toSend.getExercises()) {
-            sb.append("\nEXERCISE|").append(e.getName()).append("|").append(e.getType().name())
-              .append("|").append(e.getSets()).append("|").append(e.getReps())
-              .append("|").append(e.getWeightKg()).append("|").append(e.getDurationMin());
-        }
-
-        log("Sending ADD_SESSION to server for date " + date + "...");
-        String response = capture(() -> WorkoutClient.sendAndReceive("ADD_SESSION:" + sb.toString()));
-        log(response);
-    }
-
-    // ------------------------------------------------------------------ Helpers
-
-    /** Appends a line to the output log. */
-    private void log(String message) {
-        outputArea.append(message + "\n");
-        outputArea.setCaretPosition(outputArea.getDocument().getLength());
-    }
-
-    /**
-     * Runs an action while capturing its System.out output, then returns
-     * the captured text. Used to display server responses in the log area.
-     */
-    private String capture(Runnable action) {
-        PrintStream original = System.out;
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(buffer));
-        try {
-            action.run();
-        } finally {
-            System.setOut(original);
-        }
-        return buffer.toString().trim();
+    private void log(String tag, String message) {
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        logArea.append("[" + time + "]  " + tag + "  " + message + "\n");
+        logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 }
