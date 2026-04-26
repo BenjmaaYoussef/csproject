@@ -113,15 +113,22 @@ public class Main {
         }
 
         System.out.println("\n--- New Profile ---");
-        String name = readString("Your name: ");
-        int age = readInt("Age: ");
-        double weight = readDouble("Weight (kg): ");
-        double height = readDouble("Height (cm): ");
-        User user = new User(name, age, weight, height);
+        User user = null;
+        while (user == null) {
+            String name = readString("Your name: ");
+            int age = readInt("Age: ");
+            double weight = readDouble("Weight (kg): ");
+            double height = readDouble("Height (cm): ");
+            try {
+                user = new User(name, age, weight, height);
+            } catch (WorkoutAppException e) {
+                System.err.println(e.getMessage());
+            }
+        }
 
         boolean found = false;
         for (int i = 0; i < savedUsers.size(); i++) {
-            if (savedUsers.get(i).getName().equalsIgnoreCase(name)) {
+            if (savedUsers.get(i).getName().equalsIgnoreCase(user.getName())) {
                 savedUsers.set(i, user);
                 found = true;
                 break;
@@ -132,7 +139,7 @@ public class Main {
         }
         FileManager.saveUsers(savedUsers);
 
-        System.out.println("Welcome, " + name + "! BMI = " + String.format("%.1f", user.getBMI()));
+        System.out.println("Welcome, " + user.getName() + "! BMI = " + String.format("%.1f", user.getBMI()));
         return new WorkoutManager(user);
     }
 
@@ -144,10 +151,13 @@ public class Main {
 
         // Step 1: Test connectivity
         if (connectionMode == ConnectionMode.DIRECT_DB) {
-            Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
-            if (conn != null) {
-                try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+            try {
+                Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
+                conn.close();
                 connected = true;
+            } catch (SQLException e) {
+                System.err.println("An error occurred.");
+                e.printStackTrace();
             }
         } else { // VIA_SERVER
             try {

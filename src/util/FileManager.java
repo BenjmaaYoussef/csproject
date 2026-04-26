@@ -41,16 +41,20 @@ public class FileManager {
 
     public static void saveUserSessions(String userName, ArrayList<WorkoutSession> sessions) {
         String path = userSessionFile(userName);
+        ObjectOutputStream os = null;
         try {
             FileOutputStream fo = new FileOutputStream(path);
-            ObjectOutputStream os = new ObjectOutputStream(fo);
+            os = new ObjectOutputStream(fo);
             os.writeObject(sessions);
             os.close();
-            fo.close();
             System.out.println("Cache updated: " + path + ".");
         } catch (Exception e) {
             System.err.println("An error occurred while saving sessions for " + userName + ".");
             e.printStackTrace();
+        } finally {
+            if (os != null) {
+                try { os.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
         }
     }
 
@@ -61,16 +65,20 @@ public class FileManager {
         if (!file.exists()) {
             return sessions;
         }
+        ObjectInputStream ois = null;
         try {
             FileInputStream fi = new FileInputStream(path);
-            ObjectInputStream ois = new ObjectInputStream(fi);
+            ois = new ObjectInputStream(fi);
             sessions = (ArrayList<WorkoutSession>) ois.readObject();
             ois.close();
-            fi.close();
             System.out.println("Local cache: " + sessions.size() + " session(s) for " + userName + ".");
         } catch (Exception e) {
             System.err.println("An error occurred while loading sessions for " + userName + ".");
             e.printStackTrace();
+        } finally {
+            if (ois != null) {
+                try { ois.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
         }
         return sessions;
     }
@@ -78,16 +86,20 @@ public class FileManager {
     // ------------------------------------------------------------------ User list save/load
 
     public static void saveUsers(ArrayList<User> users) {
+        ObjectOutputStream os = null;
         try {
             FileOutputStream fo = new FileOutputStream(USERS_FILE);
-            ObjectOutputStream os = new ObjectOutputStream(fo);
+            os = new ObjectOutputStream(fo);
             os.writeObject(users);
             os.close();
-            fo.close();
             System.out.println("User list saved to " + USERS_FILE + ".");
         } catch (Exception e) {
             System.err.println("An error occurred while saving user list.");
             e.printStackTrace();
+        } finally {
+            if (os != null) {
+                try { os.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
         }
     }
 
@@ -97,16 +109,20 @@ public class FileManager {
         if (!file.exists()) {
             return users;
         }
+        ObjectInputStream ois = null;
         try {
             FileInputStream fi = new FileInputStream(USERS_FILE);
-            ObjectInputStream ois = new ObjectInputStream(fi);
+            ois = new ObjectInputStream(fi);
             users = (ArrayList<User>) ois.readObject();
             ois.close();
-            fi.close();
             System.out.println("Loaded " + users.size() + " user(s) from " + USERS_FILE + ".");
         } catch (Exception e) {
             System.err.println("An error occurred while loading user list.");
             e.printStackTrace();
+        } finally {
+            if (ois != null) {
+                try { ois.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
         }
         return users;
     }
@@ -165,13 +181,18 @@ public class FileManager {
     /** Writes the current time (ms) to sync_<userName>.txt. */
     public static void saveSyncTimestamp(String userName) {
         String path = userSyncFile(userName);
+        FileWriter writer = null;
         try {
-            FileWriter writer = new FileWriter(path);
+            writer = new FileWriter(path);
             writer.write(String.valueOf(System.currentTimeMillis()));
             writer.close();
         } catch (IOException e) {
             System.err.println("An error occurred.");
             e.printStackTrace();
+        } finally {
+            if (writer != null) {
+                try { writer.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
         }
     }
 
@@ -249,8 +270,9 @@ public class FileManager {
      */
     public static void exportReport(WorkoutManager manager) {
         String path = userReportFile(manager.getUser().getName());
+        FileWriter writer = null;
         try {
-            FileWriter writer = new FileWriter(path);
+            writer = new FileWriter(path);
             writer.write("========================================\n");
             writer.write("  WORKOUT REPORT – " + manager.getUser().getName() + "\n");
             writer.write("========================================\n\n");
@@ -264,6 +286,10 @@ public class FileManager {
         } catch (IOException e) {
             System.err.println("An error occurred while exporting the report.");
             e.printStackTrace();
+        } finally {
+            if (writer != null) {
+                try { writer.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
         }
     }
 }

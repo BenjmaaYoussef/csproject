@@ -1,5 +1,6 @@
 package model;
 
+import exception.WorkoutAppException;
 import java.io.Serializable;
 
 public class User implements Serializable {
@@ -15,7 +16,19 @@ public class User implements Serializable {
         this.name = "";
     }
 
-    public User(String name, int age, double weightKg, double heightCm) {
+    public User(String name, int age, double weightKg, double heightCm) throws WorkoutAppException {
+        if (name == null || name.trim().isEmpty()) {
+            throw new WorkoutAppException("Name cannot be blank.");
+        }
+        if (age <= 0) {
+            throw new WorkoutAppException("Age must be positive.");
+        }
+        if (weightKg <= 0) {
+            throw new WorkoutAppException("Weight must be positive.");
+        }
+        if (heightCm <= 0) {
+            throw new WorkoutAppException("Height must be positive.");
+        }
         this.name = name;
         this.age = age;
         this.weightKg = weightKg;

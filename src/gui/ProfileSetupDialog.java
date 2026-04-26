@@ -1,5 +1,6 @@
 package gui;
 
+import exception.WorkoutAppException;
 import model.User;
 import util.ConnectionMode;
 import util.FileManager;
@@ -342,7 +343,12 @@ public class ProfileSetupDialog extends JDialog {
             return;
         }
 
-        result = new User(name, age, wt, ht);
+        try {
+            result = new User(name, age, wt, ht);
+        } catch (WorkoutAppException e) {
+            System.err.println(e.getMessage());
+            return;
+        }
         WorkoutTrackerGUI.connectionMode = modeCombo.getSelectedIndex() == 0
             ? ConnectionMode.DIRECT_DB : ConnectionMode.VIA_SERVER;
 

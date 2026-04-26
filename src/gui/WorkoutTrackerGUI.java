@@ -141,10 +141,13 @@ public class WorkoutTrackerGUI extends JFrame {
 
         // Step 1: Test connectivity
         if (connectionMode == ConnectionMode.DIRECT_DB) {
-            Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
-            if (conn != null) {
-                try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+            try {
+                Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
+                conn.close();
                 connected = true;
+            } catch (SQLException e) {
+                System.err.println("An error occurred.");
+                e.printStackTrace();
             }
         } else { // VIA_SERVER
             try {
