@@ -8,8 +8,6 @@ import model.ExerciseType;
 import model.WorkoutManager;
 import model.WorkoutSession;
 
-import java.beans.XMLEncoder;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -33,103 +31,6 @@ import model.User;
 public class FileManager {
 
     private static final String USERS_FILE = "users.bin";
-
-    // ------------------------------------------------------------------ Save
-
-    /** Returns the text filename for a given user's sessions. */
-    private static String userTextFile(String userName) {
-        return "workouts_" + userName.replaceAll("\\s+", "_") + ".txt";
-    }
-
-    /** Returns the XML filename for a given user's sessions. */
-    private static String userXmlFile(String userName) {
-        return "workouts_" + userName.replaceAll("\\s+", "_") + ".xml";
-    }
-
-    /**
-     * Saves all sessions to workouts_<name>.txt (overwrites existing file).
-     */
-    public static void saveSessions(String userName, ArrayList<WorkoutSession> sessions) {
-        String path = userTextFile(userName);
-        try {
-            FileWriter writer = new FileWriter(path);
-            for (WorkoutSession session : sessions) {
-                writer.write("SESSION|" + session.getDate() + "|" + session.getNotes() + "\n");
-                for (Exercise e : session.getExercises()) {
-                    writer.write("EXERCISE|" + e.getName() + "|" + e.getType() + "|"
-                            + e.getSets() + "|" + e.getReps() + "|"
-                            + e.getWeightKg() + "|" + e.getDurationMin() + "\n");
-                }
-            }
-            writer.close();
-            System.out.println("Sessions saved to " + path + ".");
-        } catch (IOException e) {
-            System.err.println("An error occurred while saving sessions.");
-            e.printStackTrace();
-        }
-    }
-
-    // ------------------------------------------------------------------ Load
-
-    /**
-     * Loads sessions from workouts_<name>.txt.
-     * Returns an empty list if the file does not exist.
-     */
-    public static ArrayList<WorkoutSession> loadSessions(String userName) {
-        ArrayList<WorkoutSession> sessions = new ArrayList<>();
-        String path = userTextFile(userName);
-        File file = new File(path);
-        if (!file.exists()) {
-            return sessions;
-        }
-        try {
-            Scanner reader = new Scanner(file);
-            WorkoutSession current = null;
-            while (reader.hasNextLine()) {
-                String line = reader.nextLine().trim();
-                if (line.startsWith("SESSION|")) {
-                    String[] parts = line.split("\\|", 3);
-                    String date  = parts[1];
-                    String notes = parts.length > 2 ? parts[2] : "";
-                    current = new WorkoutSession(date, notes);
-                    sessions.add(current);
-                } else if (line.startsWith("EXERCISE|") && current != null) {
-                    String[] parts = line.split("\\|");
-                    String name     = parts[1];
-                    ExerciseType type = ExerciseType.valueOf(parts[2]);
-                    int    sets     = Integer.parseInt(parts[3]);
-                    int    reps     = Integer.parseInt(parts[4]);
-                    double weight   = Double.parseDouble(parts[5]);
-                    int    duration = Integer.parseInt(parts[6]);
-                    Exercise e = new Exercise(name, sets, reps, weight, duration, type);
-                    current.addExercise(e);
-                }
-            }
-            reader.close();
-            System.out.println("Loaded " + sessions.size() + " session(s) from " + path + ".");
-        } catch (FileNotFoundException e) {
-            System.err.println("An error occurred.");
-            e.printStackTrace();
-        } catch (InvalidExerciseException | DuplicateExerciseException e) {
-            System.err.println("Error reading exercise data: " + e.getMessage());
-        }
-        return sessions;
-    }
-
-    // ------------------------------------------------------------------ XML export
-
-    public static void exportXML(String userName, ArrayList<WorkoutSession> sessions) {
-        String path = userXmlFile(userName);
-        try {
-            XMLEncoder encoder = new XMLEncoder(new BufferedOutputStream(new FileOutputStream(path)));
-            encoder.writeObject(sessions);
-            encoder.close();
-            System.out.println("Sessions exported to " + path + ".");
-        } catch (Exception e) {
-            System.err.println("An error occurred while exporting to XML.");
-            e.printStackTrace();
-        }
-    }
 
     // ------------------------------------------------------------------ Per-user binary save/load
 

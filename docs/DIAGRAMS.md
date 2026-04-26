@@ -17,7 +17,7 @@ flowchart TD
 
     WM["WorkoutManager + Collections<br>per-user in-memory state"]
 
-    FM["FileManager<br>.txt  ·  .bin  ·  .xml  ·  report"]
+    FM["FileManager<br>.txt  ·  .bin"]
 
     subgraph MODES["Persistence Layer"]
         direction LR
@@ -68,31 +68,14 @@ flowchart LR
 ## Diagram 3 — Exception Hierarchy (Slide 3)
 
 ```mermaid
-classDiagram
-    class Exception {
-        <<Java built-in>>
-    }
-
-    class WorkoutAppException {
-        <<checked>>
-        +WorkoutAppException(String message)
-        +WorkoutAppException(String message, Throwable cause)
-    }
-
-    class InvalidExerciseException {
-        +InvalidExerciseException(String message)
-    }
-
-    class WorkoutNotFoundException {
-        +WorkoutNotFoundException(String date)
-    }
-
-    class DuplicateExerciseException {
-        +DuplicateExerciseException(String exerciseName)
-    }
-
-    Exception <|-- WorkoutAppException
-    WorkoutAppException <|-- InvalidExerciseException
-    WorkoutAppException <|-- WorkoutNotFoundException
-    WorkoutAppException <|-- DuplicateExerciseException
+flowchart TD
+    A["Exception<br><i>Java built-in</i>"]
+    B["WorkoutAppException<br><i>checked</i>"]
+    subgraph sub["Subclasses"]
+        direction TB
+        C["InvalidExerciseException"]
+        D["WorkoutNotFoundException"]
+        E["DuplicateExerciseException"]
+    end
+    A --> B --> sub
 ```

@@ -74,8 +74,7 @@ public class Main {
                 case 6  -> viewSummary();
                 case 7  -> viewUserProfile();
                 case 8  -> exportReport();
-                case 9  -> exportXML();
-                case 10 -> {
+                case 9 -> {
                     if (connectionMode == ConnectionMode.DIRECT_DB) {
                         deleteSessionFromDB();
                     } else {
@@ -329,10 +328,9 @@ public class Main {
         System.out.println(" 7. View user profile");
         System.out.println("--- Exports ---");
         System.out.println(" 8. Export report to file");
-        System.out.println(" 9. Export sessions to XML");
         if (connectionMode == ConnectionMode.DIRECT_DB) {
             System.out.println("--- Database ---");
-            System.out.println("10. Delete a session from database");
+            System.out.println(" 9. Delete a session from database");
         }
         System.out.println(" 0. Exit");
         System.out.println("==============================");
@@ -489,13 +487,7 @@ public class Main {
         FileManager.exportReport(manager);
     }
 
-    // ------------------------------------------------------------------ Option 9: Export to XML
-
-    private static void exportXML() {
-        FileManager.exportXML(manager.getUser().getName(), manager.getAllSessions());
-    }
-
-    // ------------------------------------------------------------------ Option 10: Delete from DB
+    // ------------------------------------------------------------------ Option 9: Delete from DB
 
     private static void deleteSessionFromDB() {
         String date = readString("Enter date of session to delete (yyyy-MM-dd): ");

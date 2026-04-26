@@ -46,7 +46,6 @@ public class DashboardPanel extends JPanel {
         title.setFont(AppColors.FONT_TITLE);
         title.setForeground(AppColors.TEXT_DARK);
         title.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
-        add(title, BorderLayout.NORTH);
 
         // ---- Stat cards row
         JPanel cardsRow = new JPanel(new GridLayout(1, 3, 16, 0));
@@ -61,7 +60,11 @@ public class DashboardPanel extends JPanel {
         cardsRow.add(statCard("Total Exercises", totalExercisesLabel, AppColors.SUCCESS));
         cardsRow.add(statCard("Personal Records", totalPRsLabel,       AppColors.DANGER));
 
-        add(cardsRow, BorderLayout.NORTH);
+        JPanel northPanel = new JPanel(new BorderLayout(0, 8));
+        northPanel.setBackground(AppColors.BG);
+        northPanel.add(title, BorderLayout.NORTH);
+        northPanel.add(cardsRow, BorderLayout.CENTER);
+        add(northPanel, BorderLayout.NORTH);
 
         // ---- Center: bar chart
         chartPanel = new BarChartPanel();

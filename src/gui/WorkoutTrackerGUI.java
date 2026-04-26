@@ -222,9 +222,10 @@ public class WorkoutTrackerGUI extends JFrame {
                     if (pushedCount > 0 && allSynced) {
                         FileManager.saveSyncTimestamp(userName);
                         lastSync = FileManager.readSyncTimestamp(userName);
+                        final int finalPushedCount = pushedCount;
                         SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
                             WorkoutTrackerGUI.this,
-                            "Connection restored. " + pushedCount + " session(s) synced to server.",
+                            "Connection restored. " + finalPushedCount + " session(s) synced to server.",
                             "Sync", JOptionPane.INFORMATION_MESSAGE));
                     }
                 }
@@ -398,10 +399,11 @@ public class WorkoutTrackerGUI extends JFrame {
     // ---------------------------------------------------------------------- Profile dialog
 
     private User showProfileDialog() {
-        ProfileSetupDialog dlg = new ProfileSetupDialog(this);
-        dlg.setVisible(true);
-        User u = dlg.getResult();
-        if (u == null) {
+        while (true) {
+            ProfileSetupDialog dlg = new ProfileSetupDialog(this);
+            dlg.setVisible(true);
+            User u = dlg.getResult();
+            if (u != null) return u;
             int choice = JOptionPane.showConfirmDialog(
                 this,
                 "No profile entered. Exit?",
@@ -410,7 +412,6 @@ public class WorkoutTrackerGUI extends JFrame {
             );
             if (choice == JOptionPane.YES_OPTION) return null;
         }
-        return u;
     }
 
     // ---------------------------------------------------------------------- Look & Feel

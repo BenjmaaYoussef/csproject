@@ -19,7 +19,7 @@ A vertical stack of five labeled boxes connected by downward arrows. Title above
 
 - Box 1 (top): **CLI — Main.java** (left) and **GUI — WorkoutTrackerGUI.java — bonus** (right), sharing the same box with a dividing line
 - Box 2: **WorkoutManager + Collections** — per-user in-memory state
-- Box 3: **FileManager** — .txt / .bin / .xml / report
+- Box 3: **FileManager** — .txt / .bin
 - Box 4: **WorkoutSessionDAO** — MySQL via JDBC
 - Box 5 (bottom): **WorkoutServer ↔ WorkoutClient** — TCP port 9876
 
@@ -38,7 +38,8 @@ A double-headed arrow between boxes 3 and 4, labeled "offline fallback".
 
 ---
 
-## Slide 2 — The Startup Flow
+## Slide 2 — Every Session Starts Here
+**Subtitle**: The Startup Flow
 
 **Duration**: ~1.5 min
 **Type**: Demo only — no code
@@ -79,7 +80,8 @@ Last three Slide Text bullets (see below)
 
 ---
 
-## Slide 3 — Chapter 2: Exceptions
+## Slide 3 — Built to Fail Safely
+**Subtitle**: Chapter 2 · Exceptions
 
 **Duration**: ~1.5 min
 **Type**: Split — code screenshot left, CLI demo right
@@ -96,11 +98,9 @@ Right half: CLI terminal showing an error being triggered
 - `src/model/WorkoutManager.java` — lines 50–57 (`getSessionByDate` method)
 
 ### Slide Text
-- The entire app is protected by a hierarchy of checked exceptions rooted in `WorkoutAppException extends Exception`
-- Three specialized exceptions: `InvalidExerciseException` (bad data), `WorkoutNotFoundException` (date not found), `DuplicateExerciseException` (same exercise added twice)
-- Checked — not `RuntimeException` — means the compiler forces every caller to either catch them or declare `throws`. You cannot ignore them.
-- `getSessionByDate()` declares `throws WorkoutNotFoundException` — if the date is not in the list, we throw. The caller has no choice but to handle it.
-- This pattern runs through every layer: the CLI catches and prints, the GUI catches and shows a dialog, the server catches and returns an error string
+- The app uses a hierarchy of custom checked exceptions rooted in `WorkoutAppException` — three specialized subclasses cover invalid data, missing sessions, and duplicate exercises.
+- Because they are checked and not `RuntimeException`, the compiler forces every caller to either catch them or declare `throws` — you cannot ignore them.
+- `getSessionByDate()` is a good example: it declares `throws WorkoutNotFoundException`, so if the date is not found, we throw and the caller is forced to handle it.
 
 ### Demo Steps
 1. In the running CLI → choose "View session by date" → enter a date that has no session → show the caught error message
@@ -108,7 +108,8 @@ Right half: CLI terminal showing an error being triggered
 
 ---
 
-## Slide 4 — Chapter 4: Collections & Generics
+## Slide 4 — One User, One Manager
+**Subtitle**: Chapter 4 · Collections & Generics
 
 **Duration**: ~1.5 min
 **Type**: Split — code screenshot left, CLI demo right
@@ -129,12 +130,9 @@ Right half: CLI terminal showing personal records printed
 - `src/util/OrderedPair.java` — lines 9–26
 
 ### Slide Text
-- Each user gets their own `WorkoutManager` instance — three typed `ArrayList` collections, no shared state between users
-- `ArrayList<WorkoutSession>` holds sessions in insertion order
-- `ArrayList<Exercise>` is the exercise library used for lookup
-- `ArrayList<Pair<String, Double>>` holds personal records — the best weight ever lifted per exercise name
-- `Pair<K, V>` is a generic interface we wrote: two type parameters, no casting, no raw types. `OrderedPair<K, V>` is the concrete implementation.
-- Personal records auto-update inside `addSession()` — every time a session is added, it scans the exercises and calls `updatePersonalRecord()` if the new weight beats the stored one
+- Each user gets their own `WorkoutManager` instance with three typed `ArrayList` collections — sessions, exercises, and personal records.
+- Personal records auto-update inside `addSession()` — if the new weight beats the stored one, the record updates as a `Pair` of the exercise name and its best weight.
+- `Pair<K, V>` is a generic interface we wrote ourselves: two type parameters, no casting, no raw types. `OrderedPair<K, V>` is the concrete implementation that holds each of those records.
 
 ### Demo Steps
 1. In the running CLI → choose "View personal records" → show the `(Bench Press, 80.0)` style output
@@ -142,44 +140,73 @@ Right half: CLI terminal showing personal records printed
 
 ---
 
-## Slide 5 — Chapter 3 + Chapter 5: Persistence
+## Slide 5 — Nothing Gets Lost
+**Subtitle**: Chapter 3 · File Handling
 
-**Duration**: ~2 min
-**Type**: Split — code screenshots left, file explorer + open file right
+**Duration**: ~1 min
+**Type**: Split — code screenshot left, CLI screenshot right
 
 ### Visual
-Left half: two VS Code screenshots stacked (one for each format)
+Left half: VS Code screenshot of `exportReport` method
 
-Right half: a file explorer window showing three files for the same user:
-- `workouts_Youssef.txt` — open in a text editor showing the pipe-delimited rows
-- `workouts_Youssef.bin` — shown as a file icon (unreadable bytes)
-- `report_Youssef.txt` — shown as a file icon
+Right half: CLI screenshot showing "Export Report" selected and the confirmation line printed
 
 ### Code Screenshots
-**Screenshot 1 — Chapter 3, FileWriter**:
-- `src/util/FileManager.java` — lines 54–69 (`saveSessions` method)
-- Make sure `writer.close()` at line 68 is visible — it is inside the `try` block, not in a `finally`
+- `src/util/FileManager.java` — lines 274–292 (`exportReport` method)
 
-**Screenshot 2 — Chapter 5, ObjectOutputStream**:
-- `src/util/FileManager.java` — lines 141–154 (`saveUserSessions` method)
+### CLI Screenshots
+- CLI session: user selects "Export Report" → terminal prints `Report exported to report_Youssef.txt.`
 
 ### Slide Text
-- Three file formats, each with a distinct purpose — none of them duplicate each other
-- `.txt` — written with `FileWriter`, read back with `Scanner(File)`. Pipe-delimited rows: one `SESSION|` line per session, one `EXERCISE|` line per exercise. Human-readable and fully re-importable into the app.
-- `.bin` — `ObjectOutputStream.writeObject(sessions)` serializes the entire `ArrayList` in one call. Written automatically on clean exit. On startup, if the DB or server is unreachable, `autoLoad()` reads this file so the user never starts with an empty list.
-- `report_name.txt` — formatted human summary exported on demand. This is what you read at the pre-login prompt.
-- `sync_name.txt` — a single millisecond timestamp. If `workouts_name.bin` was modified more recently than this timestamp, the app knows there are unsynced offline sessions and pushes them before loading.
-- Notice: `writer.close()` is called inside the `try` block — no try-with-resources, no `finally`. That is the professor's exact coding style from the Chapter 3 slides.
-
-### Demo Steps
-1. In the running CLI → choose "Export TXT" → `workouts_Youssef.txt` is written
-2. Choose "Export Report" → `report_Youssef.txt` is written
-3. Open the file explorer on screen — show all three files present
-4. Open `workouts_Youssef.txt` in a text editor — show the readable pipe-delimited rows live
+- The app produces two plain-text files using `FileWriter` and `Scanner(File)`: a human-readable workout report and a sync timestamp — each with a distinct role in the app's flow.
+- `exportReport()` writes `report_Youssef.txt` on demand — the CLI screenshot on the right shows it being triggered and the confirmation that the file was written.
+- `sync_Youssef.txt` holds a millisecond timestamp written after every successful push — `Scanner(File)` reads it back on startup to check whether the `.bin` file has sessions that were never synced.
 
 ---
 
-## Slide 6 — Chapter 6: Database
+## Slide 5.1 — What Gets Written
+**Subtitle**: Chapter 3 · File Handling (continued)
+
+**Duration**: ~30 sec
+**Type**: Split — report file left, CLI pre-login screenshot right
+
+### Visual
+Left half: `report_Youssef.txt` open in a text editor — show the full formatted content (header, summary block, session details)
+
+Right half: CLI screenshot of the pre-login prompt — user types `yes` and the report prints line by line in the terminal
+
+### Slide Text
+- This is the output of `exportReport()` — a formatted header, the user's overall summary, and each session in date order — and the same file is what the pre-login prompt reads back with `Scanner(File)` before the profile selector even appears.
+
+---
+
+## Slide 6 — Nothing Gets Lost
+**Subtitle**: Chapter 5 · Serialization
+
+**Duration**: ~1 min
+**Type**: Split — code screenshot left, file explorer right
+
+### Visual
+Left half: VS Code screenshot of `saveUserSessions` method
+
+Right half: file explorer showing `workouts_Youssef.bin` as an unreadable binary file alongside the `.txt`
+
+### Code Screenshots
+- `src/util/FileManager.java` — lines 141–154 (`saveUserSessions` method)
+
+### Slide Text
+- Where the `.txt` files are written on demand, `workouts_Youssef.bin` is automatic — `saveUserSessions()` uses `ObjectOutputStream.writeObject()` to serialize the entire session list in one call, triggered on every add and on exit.
+- On startup, if the database or server is unreachable, `loadUserSessions()` reads it back with `ObjectInputStream` — so the user never starts with an empty list regardless of connectivity.
+- `sync_Youssef.txt` connects both layers: if the `.bin` file is newer than the last sync timestamp, the app knows there are offline sessions to push before loading from the remote source.
+
+### Demo Steps
+1. Exit the app cleanly → show `workouts_Youssef.bin` created in the file explorer
+2. Restart the app → point out the auto-load message printing the session count from the binary file
+
+---
+
+## Slide 7 — The Source of Truth
+**Subtitle**: Chapter 6 · Database
 
 **Duration**: ~1.5 min
 **Type**: Split — code screenshots left, MySQL Workbench right
@@ -202,11 +229,9 @@ Right half: MySQL Workbench with two tabs open:
 - Must show: `prepareStatement`, `RETURN_GENERATED_KEYS`, `setString`, `executeUpdate`, `getGeneratedKeys`, `commit`
 
 ### Slide Text
-- `Class.forName("com.mysql.cj.jdbc.Driver")` — registers the JDBC driver before `DriverManager` can use it. This is the exact pattern from the Chapter 6 slides. Without it, the connection fails.
-- `PreparedStatement` with bound parameters (`setString`, `setInt`, `setDouble`) — prevents SQL injection and handles type conversion automatically. Never raw string concatenation.
-- `setAutoCommit(false)` starts a manual transaction — MySQL holds all changes until we call `commit()`
-- The session row is inserted first. `getGeneratedKeys()` retrieves the auto-generated `session_id`. That ID is then used as the foreign key when inserting each exercise row.
-- If any `SQLException` occurs between the session insert and the last exercise insert, `rollback()` in the `catch` block undoes everything. The session and its exercises are always consistent.
+- Every session is persisted to MySQL through `WorkoutSessionDAO` — two tables, `workout_sessions` for the session header and `session_exercises` for each exercise, linked by a generated `session_id` visible in MySQL Workbench on the right.
+- `Class.forName()` registers the JDBC driver and `DriverManager.getConnection()` opens the connection — both are in the top code screenshot, and without `Class.forName()` the connection never opens.
+- The insert block opens with `setAutoCommit(false)`, prepares the session statement with `RETURN_GENERATED_KEYS`, binds the fields, and calls `executeUpdate()` — that is where the session row visible in MySQL Workbench on the right gets written.
 
 ### Demo Steps
 1. In the running CLI → log a new workout session with two exercises
@@ -215,7 +240,8 @@ Right half: MySQL Workbench with two tabs open:
 
 ---
 
-## Slide 7 — Chapter 7: Client-Server
+## Slide 8 — Going Remote
+**Subtitle**: Chapter 7 · Client-Server
 
 **Duration**: ~1.5 min
 **Type**: Split — code screenshots left, two terminals side by side right
@@ -238,11 +264,9 @@ Right half: two terminal windows side by side
 - Must show: `new Socket(HOST, PORT)`, `DataOutputStream`, `DataInputStream`, `writeUTF(command)`, `readUTF()`
 
 ### Slide Text
-- The server opens a `ServerSocket` on port 9876 and blocks at `accept()` — it waits until a client connects
-- Both sides wrap the socket's streams in `DataInputStream` and `DataOutputStream`. `readUTF()` and `writeUTF()` are the exact method pair from the Chapter 7 slides.
-- The protocol is plain text: `GET_SESSIONS:<name>`, `ADD_SESSION:<userName>\n<session data>`, or `EXIT` — simple enough to read in the terminal
-- In Via Server mode, the client never opens a JDBC connection. All database operations happen on the server side through the same `WorkoutSessionDAO` from the previous slide.
-- The offline sync works identically in both modes — in Via Server mode, the unsynced sessions from the `.bin` file are pushed as `ADD_SESSION` socket commands instead of direct DAO calls
+- The server opens a `ServerSocket` on port 9876 and blocks at `accept()`, waiting for a client — both sides then wrap the socket streams in `DataInputStream` and `DataOutputStream`, using `readUTF()` and `writeUTF()`, the exact pair from the Chapter 7 slides.
+- The protocol is plain text: `GET_SESSIONS`, `ADD_SESSION`, or `EXIT` — simple enough to read directly in the terminal during the demo.
+- In Via Server mode, the client never opens a JDBC connection — all database operations happen on the server side through the same `WorkoutSessionDAO` from the previous slide, so the client stays completely decoupled from the database.
 
 ### Demo Steps
 1. Open two terminals side by side
@@ -252,7 +276,8 @@ Right half: two terminal windows side by side
 
 ---
 
-## Slide 8 — GUI (Bonus)
+## Slide 9 — The Same App, With a Face
+**Subtitle**: Bonus · Swing GUI
 
 **Duration**: ~1.5 min
 **Type**: Demo only — no code
@@ -263,7 +288,7 @@ A screenshot grid showing the five tabs:
 - Add Workout tab (form visible)
 - History tab (JTable with rows, detail pane below)
 - Profile tab (BMI gauge visible)
-- Exports tab (four cards visible, with the mode badge in the top area)
+- Exports tab (two cards visible, with the mode badge in the top area)
 
 ### Slide Text
 - The GUI is a bonus — `WorkoutTrackerGUI` shares the exact same `WorkoutManager`, `FileManager`, `WorkoutSessionDAO`, and `WorkoutClient` as the CLI. No logic was duplicated.
@@ -271,7 +296,7 @@ A screenshot grid showing the five tabs:
 - Dashboard: custom bar chart (exercises per session) drawn entirely with `Graphics2D` — no external library
 - History: a `JTable` of all sessions — click a row, the detail pane below updates immediately
 - Profile: user info and a BMI semicircle gauge drawn with `Graphics2D`
-- Exports tab shows the connection mode most visibly: in Direct DB mode, all 4 cards are active. Switch to Via Server — the Database card grays out, the mode badge changes, and the subtitle updates. The same mode-awareness exists in the CLI menu.
+- Exports tab shows the connection mode most visibly: in Direct DB mode, both cards are active. Switch to Via Server — the Delete Session card grays out, the mode badge changes, and the subtitle updates. The same mode-awareness exists in the CLI menu.
 
 ### Demo Steps
 1. Run `WorkoutTrackerGUI.java` — show the pre-login prompt and profile selector (same as CLI)
@@ -280,27 +305,18 @@ A screenshot grid showing the five tabs:
 4. Add Workout tab → add a session with two exercises → save
 5. History tab → new session appears in the table → click the row → detail pane updates
 6. Profile tab → show the BMI gauge
-7. Exports tab → show all 4 cards active → restart or simulate Via Server mode → Database card grays out, badge changes to "Via Server"
+7. Exports tab → show both cards active → restart or simulate Via Server mode → Delete Session card grays out, badge changes to "Via Server"
 
 ---
 
-## Slide 9 — Summary
+## Slide 10 — Summary
 
 **Duration**: ~30 sec
-**Type**: Table
+**Type**: Bullet list
 
 ### Slide Text
-
-| Chapter | Concept | Where it shows in the app |
-|---------|---------|---------------------------|
-| Ch.2 | Custom checked exceptions | `exception/` hierarchy — thrown in `WorkoutManager`, caught in CLI, GUI, and server |
-| Ch.4 | Collections + Generics | `ArrayList<WorkoutSession>`, `ArrayList<Pair<String, Double>>`, `OrderedPair<K,V>` |
-| Ch.3 | FileWriter / Scanner | `.txt` export and re-import, report export and pre-login read |
-| Ch.5 | ObjectOutputStream | `.bin` auto-save on exit, auto-load fallback on startup, offline cache |
-| Ch.6 | JDBC + PreparedStatement | `DatabaseUtility.getConnection()`, `WorkoutSessionDAO` atomic transactions |
-| Ch.7 | ServerSocket / Socket | TCP text protocol, Via Server mode, offline sync relay via socket commands |
-
-- The exceptions protect the model. The collections hold the data. The files keep it safe locally. The database persists it properly. The server makes it accessible remotely.
+- Starting from a single exception class and ending with a networked, multi-user application — six concepts, each one adding a capability and a fallback for everything below it.
+- The result is an app that works offline, syncs automatically, and runs identically through a CLI or a GUI.
 
 ---
 
@@ -308,7 +324,7 @@ A screenshot grid showing the five tabs:
 
 | Question | Answer |
 |----------|--------|
-| Why two persistence formats — `.txt` and `.bin`? | `.txt` is human-readable and re-importable — you can open it in any text editor or load it back into the app. `.bin` is the app's own snapshot — faster to read, no line-by-line parsing. They serve different purposes and never replace each other. |
+| Why keep `.txt` files if sessions are stored in `.bin`? | The two `.txt` files serve different purposes from the session cache. `report_name.txt` is a formatted human summary you can open in any text editor — it is never loaded back into the app. `sync_name.txt` holds a single timestamp that tells the app whether the `.bin` file has unsynchronised sessions. Neither one replaces the binary cache. |
 | Why `Class.forName()` before `DriverManager.getConnection()`? | It manually registers the MySQL JDBC driver. Without it, `DriverManager` does not know the driver exists and the connection fails. This is the direct pattern from the Chapter 6 slides. |
 | Why `setAutoCommit(false)` in the DAO? | So the session row and all its exercise rows are saved in one atomic transaction. If only the session saved and one exercise insert failed, the data would be inconsistent. With `setAutoCommit(false)`, either everything commits or everything rolls back. |
 | Why no try-with-resources anywhere? | That is the professor's coding style from the slide examples. Resources are closed explicitly with `.close()` inside the `try` block, not through try-with-resources syntax. We followed it exactly. |

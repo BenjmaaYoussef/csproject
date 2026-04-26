@@ -11,6 +11,7 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
@@ -57,6 +58,13 @@ public class ProfileSetupDialog extends JDialog {
         pack();
         setLocationRelativeTo(parent);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                int choice = JOptionPane.showConfirmDialog(
+                    ProfileSetupDialog.this, "Exit the application?", "Exit", JOptionPane.YES_NO_OPTION);
+                if (choice == JOptionPane.YES_OPTION) System.exit(0);
+            }
+        });
     }
 
     private void buildUI() {
@@ -296,37 +304,62 @@ public class ProfileSetupDialog extends JDialog {
     }
 
     private void onSubmit() {
+        javax.swing.border.Border defaultBorder = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(0xDDDDDD)),
+            BorderFactory.createEmptyBorder(6, 8, 6, 8));
+
         String name = nameField.getText().trim();
         if (name.isEmpty()) {
             nameField.setBorder(BorderFactory.createLineBorder(AppColors.DANGER, 2));
             return;
         }
+        nameField.setBorder(defaultBorder);
+
+        int age;
         try {
-            int age    = Integer.parseInt(ageField.getText().trim());
-            double wt  = Double.parseDouble(weightField.getText().trim());
-            double ht  = Double.parseDouble(heightField.getText().trim());
-            result = new User(name, age, wt, ht);
-            WorkoutTrackerGUI.connectionMode = modeCombo.getSelectedIndex() == 0
-                ? ConnectionMode.DIRECT_DB : ConnectionMode.VIA_SERVER;
-
-            // Add to saved users if not already present
-            boolean found = false;
-            for (int i = 0; i < savedUsers.size(); i++) {
-                if (savedUsers.get(i).getName().equalsIgnoreCase(name)) {
-                    savedUsers.set(i, result);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                savedUsers.add(result);
-            }
-            FileManager.saveUsers(savedUsers);
-
-            dispose();
+            age = Integer.parseInt(ageField.getText().trim());
+            ageField.setBorder(defaultBorder);
         } catch (NumberFormatException ex) {
             ageField.setBorder(BorderFactory.createLineBorder(AppColors.DANGER, 2));
+            return;
         }
+
+        double wt;
+        try {
+            wt = Double.parseDouble(weightField.getText().trim());
+            weightField.setBorder(defaultBorder);
+        } catch (NumberFormatException ex) {
+            weightField.setBorder(BorderFactory.createLineBorder(AppColors.DANGER, 2));
+            return;
+        }
+
+        double ht;
+        try {
+            ht = Double.parseDouble(heightField.getText().trim());
+            heightField.setBorder(defaultBorder);
+        } catch (NumberFormatException ex) {
+            heightField.setBorder(BorderFactory.createLineBorder(AppColors.DANGER, 2));
+            return;
+        }
+
+        result = new User(name, age, wt, ht);
+        WorkoutTrackerGUI.connectionMode = modeCombo.getSelectedIndex() == 0
+            ? ConnectionMode.DIRECT_DB : ConnectionMode.VIA_SERVER;
+
+        boolean found = false;
+        for (int i = 0; i < savedUsers.size(); i++) {
+            if (savedUsers.get(i).getName().equalsIgnoreCase(name)) {
+                savedUsers.set(i, result);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            savedUsers.add(result);
+        }
+        FileManager.saveUsers(savedUsers);
+
+        dispose();
     }
 
     /** Returns the User selected or created, or null if cancelled. */

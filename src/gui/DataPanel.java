@@ -2,7 +2,6 @@ package gui;
 
 import db.WorkoutSessionDAO;
 import model.WorkoutManager;
-import model.WorkoutSession;
 import util.FileManager;
 
 import javax.swing.BorderFactory;
@@ -14,7 +13,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -29,8 +27,6 @@ import java.time.format.DateTimeFormatter;
  *
  * Auto-save/auto-load (Phases B & C) handle all routine persistence.
  * This tab provides:
- *   - Export TXT  : human-readable pipe-delimited text file (Phase 3)
- *   - Export XML  : machine-readable XML archive (Phase 4)
  *   - Export Report : formatted plain-text summary report (Phase 3)
  *   - Delete from DB : remove a specific session by date (Phase 5)
  */
@@ -124,25 +120,9 @@ public class DataPanel extends JPanel {
 
     /** Three export cards + one mode-specific card in a horizontal row. */
     private JPanel buildCards() {
-        JPanel row = new JPanel(new GridLayout(1, 4, 14, 0));
+        JPanel row = new JPanel(new GridLayout(1, 2, 14, 0));
         row.setBackground(AppColors.BG);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
-
-        row.add(buildCard(
-            "Text Export",
-            AppColors.PRIMARY,
-            "Export TXT",
-            "Saves a pipe-delimited .txt file you\ncan re-import or open in a text editor.",
-            this::exportTXT
-        ));
-
-        row.add(buildCard(
-            "XML Archive",
-            AppColors.SUCCESS,
-            "Export XML",
-            "Produces a structured XML file useful\nfor backups or external tools.",
-            this::exportXML
-        ));
 
         row.add(buildCard(
             "Summary Report",
@@ -337,20 +317,6 @@ public class DataPanel extends JPanel {
     // -------------------------------------------------------------------------
     // Actions
     // -------------------------------------------------------------------------
-
-    private void exportTXT() {
-        String name = manager.getUser().getName();
-        int count = manager.getAllSessions().size();
-        FileManager.saveSessions(name, manager.getAllSessions());
-        log("OK", "workouts_" + name + ".txt — " + count + " session(s) written.");
-    }
-
-    private void exportXML() {
-        String name = manager.getUser().getName();
-        int count = manager.getAllSessions().size();
-        FileManager.exportXML(name, manager.getAllSessions());
-        log("OK", "workouts_" + name.replaceAll("\\s+", "_") + ".xml — " + count + " session(s) written.");
-    }
 
     private void exportReport() {
         FileManager.exportReport(manager);
