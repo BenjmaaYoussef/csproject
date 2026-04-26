@@ -8,15 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Central manager for all workout data.
- *
- * Phase 2 collections used:
- *   - ArrayList<WorkoutSession>              : ordered list of sessions
- *   - ArrayList<Exercise>                    : exercise library (linear search by name)
- *   - ArrayList<Pair<String, Double>>        : personal records (exercise name → best weight)
- *   - Pair<K,V> / OrderedPair<K,V>          : generic key-value utility
- */
+
 public class WorkoutManager {
 
     private final ArrayList<WorkoutSession> sessions;
@@ -31,9 +23,7 @@ public class WorkoutManager {
         this.personalRecords = new ArrayList<>();
     }
 
-    // ------------------------------------------------------------------ Sessions
-
-    /** Adds a new workout session and updates personal records. */
+    
     public void addSession(WorkoutSession session) {
         sessions.add(session);
         for (Exercise e : session.getExercises()) {
@@ -43,10 +33,7 @@ public class WorkoutManager {
         }
     }
 
-    /**
-     * Returns the session logged on the given date (yyyy-MM-dd).
-     * @throws WorkoutNotFoundException if no session exists for that date
-     */
+    
     public WorkoutSession getSessionByDate(String date) throws WorkoutNotFoundException {
         for (int i = 0; i < sessions.size(); i++) {
             if (sessions.get(i).getDate().equals(date)) {
@@ -56,27 +43,19 @@ public class WorkoutManager {
         throw new WorkoutNotFoundException(date);
     }
 
-    /** Returns all sessions in the order they were added. */
+    
     public ArrayList<WorkoutSession> getAllSessions() {
         return sessions;
     }
 
-    /**
-     * Returns a new list of all sessions sorted chronologically by date.
-     * Uses Collections.sort() with the natural order defined in WorkoutSession.
-     */
+    
     public List<WorkoutSession> getSessionsSortedByDate() {
         ArrayList<WorkoutSession> sorted = new ArrayList<>(sessions);
         Collections.sort(sorted);
         return sorted;
     }
 
-    // ------------------------------------------------------------------ Exercise library
-
-    /**
-     * Adds an exercise to the reusable library.
-     * Replaces any existing entry with the same name (case-insensitive).
-     */
+    
     public void addToLibrary(Exercise exercise) {
         for (int i = 0; i < exerciseLibrary.size(); i++) {
             if (exerciseLibrary.get(i).getName().equalsIgnoreCase(exercise.getName())) {
@@ -87,7 +66,7 @@ public class WorkoutManager {
         exerciseLibrary.add(exercise);
     }
 
-    /** Returns exercise from library by name, or null if not found. */
+    
     public Exercise getFromLibrary(String name) {
         for (Exercise e : exerciseLibrary) {
             if (e.getName().equalsIgnoreCase(name)) {
@@ -97,16 +76,12 @@ public class WorkoutManager {
         return null;
     }
 
-    /** Returns the full exercise library list. */
+    
     public ArrayList<Exercise> getExerciseLibrary() {
         return exerciseLibrary;
     }
 
-    // ------------------------------------------------------------------ Filtering
-
-    /**
-     * Returns all exercises of a given type across all logged sessions.
-     */
+    
     public List<Exercise> filterExercisesByType(ExerciseType type) {
         ArrayList<Exercise> result = new ArrayList<>();
         for (WorkoutSession session : sessions) {
@@ -119,12 +94,7 @@ public class WorkoutManager {
         return result;
     }
 
-    // ------------------------------------------------------------------ Personal records
-
-    /**
-     * Updates the personal record for an exercise if the new weight is higher.
-     * Uses linear search over the ArrayList.
-     */
+    
     public void updatePersonalRecord(String exerciseName, double weightKg) {
         for (int i = 0; i < personalRecords.size(); i++) {
             if (personalRecords.get(i).getKey().equalsIgnoreCase(exerciseName)) {
@@ -137,10 +107,7 @@ public class WorkoutManager {
         personalRecords.add(new OrderedPair<>(exerciseName.toLowerCase(), weightKg));
     }
 
-    /**
-     * Returns the personal record for the given exercise as a Pair<key, value>.
-     * Returns null if no record exists.
-     */
+    
     public Pair<String, Double> getPersonalRecord(String exerciseName) {
         for (Pair<String, Double> pr : personalRecords) {
             if (pr.getKey().equalsIgnoreCase(exerciseName)) {
@@ -150,16 +117,12 @@ public class WorkoutManager {
         return null;
     }
 
-    /** Returns all personal records as an ArrayList of Pair<name, bestWeight>. */
+    
     public ArrayList<Pair<String, Double>> getAllPersonalRecords() {
         return personalRecords;
     }
 
-    // ------------------------------------------------------------------ Summary
-
-    /**
-     * Returns a human-readable summary of the user's workout history.
-     */
+    
     public String getSummary() {
         StringBuilder sb = new StringBuilder();
         sb.append("==== Workout Summary for ").append(user.getName()).append(" ====\n");
@@ -180,8 +143,7 @@ public class WorkoutManager {
         return sb.toString();
     }
 
-    // ------------------------------------------------------------------ User
-
+    
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 }

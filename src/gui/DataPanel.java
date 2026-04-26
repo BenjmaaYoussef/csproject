@@ -22,14 +22,7 @@ import java.awt.GridLayout;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Exports tab – manual export and database management operations.
- *
- * Auto-save/auto-load (Phases B & C) handle all routine persistence.
- * This tab provides:
- *   - Export Report : formatted plain-text summary report (Phase 3)
- *   - Delete from DB : remove a specific session by date (Phase 5)
- */
+
 public class DataPanel extends JPanel {
 
     private final WorkoutManager manager;
@@ -45,22 +38,19 @@ public class DataPanel extends JPanel {
         buildUI();
     }
 
-    // -------------------------------------------------------------------------
-    // UI construction
-    // -------------------------------------------------------------------------
-
+    
     private void buildUI() {
         add(buildTop(),    BorderLayout.NORTH);
         add(buildCenter(), BorderLayout.CENTER);
     }
 
-    /** Page header with title, mode badge, and subtitle. */
+    
     private JPanel buildTop() {
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(AppColors.BG);
         top.setBorder(BorderFactory.createEmptyBorder(24, 24, 0, 24));
 
-        // Title + mode badge on same row
+        
         JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titleRow.setBackground(AppColors.BG);
 
@@ -87,7 +77,7 @@ public class DataPanel extends JPanel {
         return top;
     }
 
-    /** Small pill badge showing the active connection mode. */
+    
     private JLabel buildModeBadge() {
         boolean isDB = WorkoutTrackerGUI.connectionMode == util.ConnectionMode.DIRECT_DB;
         String text  = isDB ? "Direct DB" : "Via Server";
@@ -106,7 +96,7 @@ public class DataPanel extends JPanel {
         return badge;
     }
 
-    /** Card grid (top) + activity log (bottom). */
+    
     private JPanel buildCenter() {
         JPanel center = new JPanel(new BorderLayout(0, 16));
         center.setBackground(AppColors.BG);
@@ -118,7 +108,7 @@ public class DataPanel extends JPanel {
         return center;
     }
 
-    /** Three export cards + one mode-specific card in a horizontal row. */
+    
     private JPanel buildCards() {
         JPanel row = new JPanel(new GridLayout(1, 2, 14, 0));
         row.setBackground(AppColors.BG);
@@ -132,7 +122,7 @@ public class DataPanel extends JPanel {
             this::exportReport
         ));
 
-        // 4th card depends on connection mode
+        
         if (WorkoutTrackerGUI.connectionMode == util.ConnectionMode.DIRECT_DB) {
             row.add(buildCard(
                 "Database",
@@ -148,9 +138,7 @@ public class DataPanel extends JPanel {
         return row;
     }
 
-    /**
-     * Greyed-out card shown in Via Server mode where DB operations are not available.
-     */
+    
     private JPanel buildUnavailableCard() {
         Color grey = new Color(0xCCCCCC);
 
@@ -183,8 +171,7 @@ public class DataPanel extends JPanel {
         inner.add(Box.createVerticalGlue());
         inner.add(Box.createVerticalStrut(12));
 
-        // Not using setEnabled(false) — Metal L&F overrides setBackground() on disabled buttons.
-        // The grey colors below already communicate the unavailable state visually.
+        
         JButton btn = new JButton("Not Available");
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setBackground(new Color(0xDDDDDD));
@@ -194,17 +181,14 @@ public class DataPanel extends JPanel {
         btn.setOpaque(true);
         btn.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
         btn.setAlignmentX(LEFT_ALIGNMENT);
-        // No action listener — clicking does nothing
+        
         inner.add(btn);
 
         card.add(inner, BorderLayout.CENTER);
         return card;
     }
 
-    /**
-     * Builds a single card with a coloured top border, heading, description,
-     * and a single action button.
-     */
+    
     private JPanel buildCard(String heading, Color accent,
                              String btnLabel, String description,
                              Runnable action) {
@@ -215,13 +199,13 @@ public class DataPanel extends JPanel {
             BorderFactory.createLineBorder(new Color(0xE8E8E8))
         ));
 
-        // ---- inner padding panel
+        
         JPanel inner = new JPanel();
         inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
         inner.setBackground(AppColors.CARD);
         inner.setBorder(BorderFactory.createEmptyBorder(14, 16, 16, 16));
 
-        // heading
+        
         JLabel title = new JLabel(heading);
         title.setFont(AppColors.FONT_HEADING);
         title.setForeground(accent);
@@ -229,7 +213,7 @@ public class DataPanel extends JPanel {
         inner.add(title);
         inner.add(Box.createVerticalStrut(8));
 
-        // description (multi-line via html)
+        
         String htmlDesc = "<html><body style='width:120px;color:#8D99AE;font-family:Segoe UI;font-size:11px'>"
             + description.replace("\n", "<br>") + "</body></html>";
         JLabel desc = new JLabel(htmlDesc);
@@ -238,7 +222,7 @@ public class DataPanel extends JPanel {
         inner.add(Box.createVerticalGlue());
         inner.add(Box.createVerticalStrut(12));
 
-        // action button
+        
         JButton btn = new JButton(btnLabel);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setBackground(accent);
@@ -251,7 +235,7 @@ public class DataPanel extends JPanel {
         btn.setAlignmentX(LEFT_ALIGNMENT);
         btn.addActionListener(e -> action.run());
 
-        // hover effect
+        
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             Color base = accent;
             public void mouseEntered(java.awt.event.MouseEvent e) {
@@ -267,13 +251,13 @@ public class DataPanel extends JPanel {
         return card;
     }
 
-    /** Activity log area at the bottom of the tab. */
+    
     private JPanel buildLog() {
         JPanel logCard = new JPanel(new BorderLayout());
         logCard.setBackground(AppColors.CARD);
         logCard.setBorder(BorderFactory.createLineBorder(new Color(0xE8E8E8)));
 
-        // header row with label + clear button
+        
         JPanel logHeader = new JPanel(new BorderLayout());
         logHeader.setBackground(new Color(0xF7F8FA));
         logHeader.setBorder(BorderFactory.createCompoundBorder(
@@ -314,10 +298,7 @@ public class DataPanel extends JPanel {
         return logCard;
     }
 
-    // -------------------------------------------------------------------------
-    // Actions
-    // -------------------------------------------------------------------------
-
+    
     private void exportReport() {
         FileManager.exportReport(manager);
         String name = manager.getUser().getName();
@@ -349,10 +330,7 @@ public class DataPanel extends JPanel {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Logging helpers
-    // -------------------------------------------------------------------------
-
+    
     private void log(String tag, String message) {
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         logArea.append("[" + time + "]  " + tag + "  " + message + "\n");

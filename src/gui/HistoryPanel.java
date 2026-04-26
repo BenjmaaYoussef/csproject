@@ -19,9 +19,7 @@ import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * History tab – JTable of sessions; clicking a row shows details below.
- */
+
 public class HistoryPanel extends JPanel {
 
     private final WorkoutManager manager;
@@ -45,7 +43,7 @@ public class HistoryPanel extends JPanel {
         title.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
         add(title, BorderLayout.NORTH);
 
-        // Table
+        
         String[] cols = {"Date", "Exercises", "Notes"};
         tableModel = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
@@ -61,7 +59,7 @@ public class HistoryPanel extends JPanel {
         table.setShowVerticalLines(false);
         table.setIntercellSpacing(new java.awt.Dimension(0, 0));
 
-        // Column widths
+        
         table.getColumnModel().getColumn(0).setPreferredWidth(110);
         table.getColumnModel().getColumn(1).setPreferredWidth(80);
         table.getColumnModel().getColumn(2).setPreferredWidth(400);
@@ -73,7 +71,7 @@ public class HistoryPanel extends JPanel {
         JScrollPane tableScroll = new JScrollPane(table);
         tableScroll.setBorder(BorderFactory.createLineBorder(new Color(0xEEEEEE)));
 
-        // Detail area
+        
         detailArea = new JTextArea();
         detailArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
         detailArea.setEditable(false);
@@ -93,7 +91,7 @@ public class HistoryPanel extends JPanel {
         add(split, BorderLayout.CENTER);
     }
 
-    /** Rebuilds the table from the manager's session list. */
+    
     public void refresh() {
         tableModel.setRowCount(0);
         List<WorkoutSession> sorted = manager.getSessionsSortedByDate();

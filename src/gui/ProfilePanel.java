@@ -17,9 +17,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 
-/**
- * Profile tab – user details and a BMI gauge.
- */
+
 public class ProfilePanel extends JPanel {
 
     private final WorkoutManager manager;
@@ -101,7 +99,7 @@ public class ProfilePanel extends JPanel {
             card.add(vals[i], vc);
         }
 
-        // BMI category label
+        
         bmiCatLabel = new JLabel("");
         bmiCatLabel.setFont(AppColors.FONT_SMALL);
         GridBagConstraints catC = new GridBagConstraints();
@@ -153,8 +151,7 @@ public class ProfilePanel extends JPanel {
         bmiGauge.repaint();
     }
 
-    // ---- Helpers
-
+    
     private JLabel valLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(AppColors.FONT_BODY.deriveFont(Font.BOLD));
@@ -172,8 +169,7 @@ public class ProfilePanel extends JPanel {
         return p;
     }
 
-    // ---- Inner BMI gauge
-
+    
     private static class BmiGauge extends JPanel {
 
         private double bmi = 0;
@@ -193,9 +189,8 @@ public class ProfilePanel extends JPanel {
             int cx = w / 2, cy = h - 30;
             int radius = Math.min(cx - 20, cy - 20);
 
-            // Draw arc segments: underweight / normal / overweight / obese
-            // BMI range mapped to 180 degrees (left = 10, right = 40+)
-            int[] angles = {35, 55, 50, 40}; // degrees for each segment
+            
+            int[] angles = {35, 55, 50, 40}; 
             Color[] segColors = {
                 new Color(0x91C8E4),
                 AppColors.SUCCESS,
@@ -210,15 +205,15 @@ public class ProfilePanel extends JPanel {
                 startAngle -= angles[i];
             }
 
-            // White inner arc (donut)
+            
             int inner = (int) (radius * 0.62);
             g2.setColor(AppColors.CARD);
             g2.fillArc(cx - inner, cy - inner, inner * 2, inner * 2, 0, -180);
 
-            // Needle
+            
             if (bmi > 0) {
                 double clampedBmi = Math.max(10, Math.min(40, bmi));
-                // Map 10–40 → 180–0 degrees
+                
                 double angle = 180 - ((clampedBmi - 10) / 30.0) * 180;
                 double rad   = Math.toRadians(angle);
                 int nx = (int) (cx + (radius * 0.75) * Math.cos(rad));
@@ -230,7 +225,7 @@ public class ProfilePanel extends JPanel {
                 g2.fillOval(cx - 6, cy - 6, 12, 12);
             }
 
-            // Legend labels
+            
             g2.setFont(AppColors.FONT_SMALL);
             g2.setColor(AppColors.TEXT_LIGHT);
             g2.drawString("10", cx - radius - 2, cy + 14);

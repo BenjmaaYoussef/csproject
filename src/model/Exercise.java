@@ -30,9 +30,7 @@ public class Exercise implements Serializable {
         validate();
     }
 
-    /**
-     * Validates all fields and throws InvalidExerciseException if any are invalid.
-     */
+    
     private void validate() throws InvalidExerciseException {
         if (name == null || name.trim().isEmpty()) {
             throw new InvalidExerciseException("Exercise name cannot be blank.");
@@ -54,8 +52,7 @@ public class Exercise implements Serializable {
         }
     }
 
-    // ---------- Getters ----------
-
+    
     public String getName() { return name; }
     public int getSets() { return sets; }
     public int getReps() { return reps; }
@@ -63,8 +60,7 @@ public class Exercise implements Serializable {
     public int getDurationMin() { return durationMin; }
     public ExerciseType getType() { return type; }
 
-    // ---------- Setters ----------
-
+    
     public void setName(String name) throws InvalidExerciseException {
         if (name == null || name.trim().isEmpty()) {
             throw new InvalidExerciseException("Exercise name cannot be blank.");

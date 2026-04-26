@@ -33,9 +33,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
-/**
- * Add Workout tab – form to build and save a new WorkoutSession.
- */
+
 public class AddWorkoutPanel extends JPanel {
 
     private final WorkoutManager manager;
@@ -53,7 +51,7 @@ public class AddWorkoutPanel extends JPanel {
     private DefaultTableModel exerciseTableModel;
     private JTable exerciseTable;
 
-    // Stores exercises staged before the session is saved
+    
     private final java.util.ArrayList<Exercise> staged = new java.util.ArrayList<>();
 
     public AddWorkoutPanel(WorkoutManager manager, Runnable onSessionSaved) {
@@ -72,7 +70,7 @@ public class AddWorkoutPanel extends JPanel {
         title.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
         add(title, BorderLayout.NORTH);
 
-        // Split: left = session info, right = exercise entry
+        
         JPanel content = new JPanel(new BorderLayout(16, 0));
         content.setBackground(AppColors.BG);
 
@@ -82,7 +80,7 @@ public class AddWorkoutPanel extends JPanel {
         add(content, BorderLayout.CENTER);
     }
 
-    // ---- Left card: date + notes + save button
+    
     private JPanel buildSessionCard() {
         JPanel card = card();
         card.setPreferredSize(new Dimension(260, 0));
@@ -128,7 +126,7 @@ public class AddWorkoutPanel extends JPanel {
         return card;
     }
 
-    // ---- Right card: exercise entry + staged table
+    
     private JPanel buildExerciseCard() {
         JPanel card = card();
         card.setLayout(new BorderLayout(0, 12));
@@ -138,7 +136,7 @@ public class AddWorkoutPanel extends JPanel {
         heading.setForeground(AppColors.PRIMARY);
         card.add(heading, BorderLayout.NORTH);
 
-        // Form row
+        
         JPanel form = new JPanel(new GridBagLayout());
         form.setBackground(AppColors.CARD);
 
@@ -177,7 +175,7 @@ public class AddWorkoutPanel extends JPanel {
         durationField = field(6);
         form.add(durationField, fc);
 
-        // Add exercise button
+        
         JButton addExBtn = new JButton("+ Add Exercise");
         addExBtn.setFont(AppColors.FONT_BODY);
         addExBtn.setBackground(AppColors.SUCCESS);
@@ -198,7 +196,7 @@ public class AddWorkoutPanel extends JPanel {
 
         card.add(form, BorderLayout.NORTH);
 
-        // Staged exercises table
+        
         String[] cols = {"Name", "Type", "Detail"};
         exerciseTableModel = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
@@ -215,7 +213,7 @@ public class AddWorkoutPanel extends JPanel {
         scroll.setBorder(BorderFactory.createLineBorder(new Color(0xEEEEEE)));
         card.add(scroll, BorderLayout.CENTER);
 
-        // Remove button
+        
         JButton removeBtn = new JButton("Remove Selected");
         removeBtn.setFont(AppColors.FONT_SMALL);
         removeBtn.setForeground(AppColors.DANGER);
@@ -242,8 +240,7 @@ public class AddWorkoutPanel extends JPanel {
         setFieldEnabled(durationField,  isCardio);
     }
 
-    /** Enables/disables a field and updates its visual state explicitly,
-     *  since Metal L&F ignores setBackground() when rendering disabled state. */
+    
     private void setFieldEnabled(JTextField field, boolean enabled) {
         field.setEnabled(enabled);
         field.setBackground(enabled ? Color.WHITE : new Color(0xEEEEEE));
@@ -311,7 +308,7 @@ public class AddWorkoutPanel extends JPanel {
         manager.addSession(session);
         autoSave(session);
 
-        // Reset form
+        
         dateField.setText("");
         notesArea.setText("");
         staged.clear();
@@ -330,7 +327,7 @@ public class AddWorkoutPanel extends JPanel {
             if (WorkoutTrackerGUI.connectionMode == ConnectionMode.DIRECT_DB) {
                 WorkoutSessionDAO dao = new WorkoutSessionDAO();
                 dao.saveSession(session, userName);
-            } else { // VIA_SERVER
+            } else { 
                 StringBuilder sb = new StringBuilder();
                 sb.append(userName).append("\n");
                 sb.append("SESSION|").append(session.getDate()).append("|").append(session.getNotes());
@@ -354,8 +351,7 @@ public class AddWorkoutPanel extends JPanel {
         durationField.setText("");
     }
 
-    // ---- Helpers
-
+    
     private int parseIntField(JTextField f, String fieldName) {
         try {
             String t = f.getText().trim();

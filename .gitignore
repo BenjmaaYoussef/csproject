@@ -39,3 +39,6 @@ test/
 lib/
 run_tests.sh
 out/test/
+
+### Utility scripts ###
+remove_comments.py

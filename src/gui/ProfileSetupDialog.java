@@ -24,11 +24,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 
-/**
- * Modal dialog shown on launch.
- * - If saved users exist: shows a user-selection screen (JComboBox).
- * - If no saved users, or user clicks "New Profile": shows the create-profile form.
- */
+
 public class ProfileSetupDialog extends JDialog {
 
     private static final String CARD_SELECT = "SELECT";
@@ -37,13 +33,13 @@ public class ProfileSetupDialog extends JDialog {
     private User result = null;
     private ArrayList<User> savedUsers;
 
-    // Selection screen
+    
     private JComboBox<String> userCombo;
 
-    // Shared mode selector
+    
     private JComboBox<String> modeCombo;
 
-    // Create screen
+    
     private JTextField nameField;
     private JTextField ageField;
     private JTextField weightField;
@@ -111,8 +107,7 @@ public class ProfileSetupDialog extends JDialog {
         return panel;
     }
 
-    // ------------------------------------------------------------------ Select card
-
+    
     private JPanel buildSelectCard() {
         JPanel root = new JPanel(new BorderLayout(0, 0));
         root.setBackground(AppColors.CARD);
@@ -155,7 +150,7 @@ public class ProfileSetupDialog extends JDialog {
 
         root.add(center, BorderLayout.CENTER);
 
-        // Buttons
+        
         JPanel bottom = new JPanel(new BorderLayout(10, 0));
         bottom.setBackground(AppColors.CARD);
         bottom.setBorder(BorderFactory.createEmptyBorder(12, 28, 24, 28));
@@ -205,8 +200,7 @@ public class ProfileSetupDialog extends JDialog {
         }
     }
 
-    // ------------------------------------------------------------------ Create card
-
+    
     private JPanel buildCreateCard() {
         JPanel root = new JPanel(new BorderLayout(0, 0));
         root.setBackground(AppColors.CARD);
@@ -268,7 +262,7 @@ public class ProfileSetupDialog extends JDialog {
 
         bottom.add(createBtn, BorderLayout.CENTER);
 
-        // Only show "Back" button if there are existing users to go back to
+        
         if (!savedUsers.isEmpty()) {
             JButton backBtn = new JButton("Back");
             backBtn.setFont(AppColors.FONT_HEADING);
@@ -368,7 +362,7 @@ public class ProfileSetupDialog extends JDialog {
         dispose();
     }
 
-    /** Returns the User selected or created, or null if cancelled. */
+    
     public User getResult() {
         return result;
     }

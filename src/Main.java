@@ -36,7 +36,7 @@ public class Main {
         System.out.println("║       Workout Tracker        ║");
         System.out.println("╚══════════════════════════════╝");
 
-        // C3: Pre-login report reader
+        
         System.out.println("View your last report before logging in? (yes/no)");
         String preAnswer = scanner.nextLine().trim();
         if (preAnswer.equalsIgnoreCase("yes")) {
@@ -51,14 +51,14 @@ public class Main {
 
         manager = setupUser();
 
-        // B2: Mode selection
+        
         System.out.println("\nSelect connection mode:");
         System.out.println("  1. Direct (Database)");
         System.out.println("  2. Via Server");
         int modeChoice = readInt("Choice: ");
         connectionMode = (modeChoice == 2) ? ConnectionMode.VIA_SERVER : ConnectionMode.DIRECT_DB;
 
-        // B4: Auto-load
+        
         autoLoad();
 
         boolean running = true;
@@ -85,7 +85,7 @@ public class Main {
                 default -> System.out.println("Invalid option. Try again.");
             }
         }
-        // B7: Write .bin on clean exit
+        
         FileManager.saveUserSessions(manager.getUser().getName(), manager.getAllSessions());
         if (!offlineMode) {
             FileManager.saveSyncTimestamp(manager.getUser().getName());
@@ -93,8 +93,7 @@ public class Main {
         System.out.println("Goodbye!");
     }
 
-    // ------------------------------------------------------------------ Setup
-
+    
     private static WorkoutManager setupUser() {
         ArrayList<User> savedUsers = FileManager.loadUsers();
 
@@ -143,13 +142,12 @@ public class Main {
         return new WorkoutManager(user);
     }
 
-    // ------------------------------------------------------------------ Auto-load / Auto-save
-
+    
     private static void autoLoad() {
         String userName = manager.getUser().getName();
         boolean connected = false;
 
-        // Step 1: Test connectivity
+        
         if (connectionMode == ConnectionMode.DIRECT_DB) {
             try {
                 Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
@@ -159,7 +157,7 @@ public class Main {
                 System.err.println("An error occurred.");
                 e.printStackTrace();
             }
-        } else { // VIA_SERVER
+        } else { 
             try {
                 Socket testSocket = new Socket("localhost", 9876);
                 testSocket.close();
@@ -172,7 +170,7 @@ public class Main {
         File binFile = new File(FileManager.getUserBinPath(userName));
         long lastSync = FileManager.readSyncTimestamp(userName);
 
-        // C1: Offline sync – if connected and .bin is newer than last sync, push local data first
+        
         if (connected) {
             if (binFile.exists() && binFile.lastModified() > lastSync) {
                 ArrayList<WorkoutSession> binSessions = FileManager.loadUserSessions(userName);
@@ -181,7 +179,7 @@ public class Main {
                     int pushedCount = 0;
                     if (connectionMode == ConnectionMode.DIRECT_DB) {
                         WorkoutSessionDAO dao = new WorkoutSessionDAO();
-                        // Fetch existing dates to avoid re-inserting already-synced sessions
+                        
                         ArrayList<WorkoutSession> dbSessions = dao.getAllSessions(userName);
                         ArrayList<String> existingDates = new ArrayList<>();
                         for (int i = 0; i < dbSessions.size(); i++) {
@@ -198,8 +196,8 @@ public class Main {
                                 }
                             }
                         }
-                    } else { // VIA_SERVER
-                        // Fetch existing dates via server to avoid re-inserting already-synced sessions
+                    } else { 
+                        
                         String existingData = WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName);
                         ArrayList<String> existingDates = new ArrayList<>();
                         if (!existingData.equals("NONE") && !existingData.startsWith("ERROR")) {
@@ -241,13 +239,13 @@ public class Main {
             }
         }
 
-        // Step 2: Normal auto-load
+        
         ArrayList<WorkoutSession> sessions = new ArrayList<>();
         if (connected) {
             if (connectionMode == ConnectionMode.DIRECT_DB) {
                 WorkoutSessionDAO dao = new WorkoutSessionDAO();
                 sessions = dao.getAllSessions(userName);
-            } else { // VIA_SERVER
+            } else { 
                 String response = WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName);
                 if (!response.equals("NONE") && !response.startsWith("ERROR")) {
                     String[] lines = response.split("\n");
@@ -308,7 +306,7 @@ public class Main {
             if (connectionMode == ConnectionMode.DIRECT_DB) {
                 WorkoutSessionDAO dao = new WorkoutSessionDAO();
                 dao.saveSession(session, userName);
-            } else { // VIA_SERVER
+            } else { 
                 StringBuilder sb = new StringBuilder();
                 sb.append(userName).append("\n");
                 sb.append("SESSION|").append(session.getDate()).append("|").append(session.getNotes());
@@ -324,8 +322,7 @@ public class Main {
         FileManager.saveUserSessions(userName, manager.getAllSessions());
     }
 
-    // ------------------------------------------------------------------ Menus
-
+    
     private static void printMainMenu() {
         String modeLabel = (connectionMode == ConnectionMode.DIRECT_DB) ? "Direct DB" : "Via Server";
         System.out.println("\n============================== [" + modeLabel + "]");
@@ -346,8 +343,7 @@ public class Main {
         System.out.println("==============================");
     }
 
-    // ------------------------------------------------------------------ Option 1: Log session
-
+    
     private static void logWorkoutSession() {
         System.out.println("\n--- Log Workout Session ---");
         String date = readString("Date (yyyy-MM-dd): ");
@@ -404,8 +400,7 @@ public class Main {
         return new Exercise(name, sets, reps, weight, duration, type);
     }
 
-    // ------------------------------------------------------------------ Option 2: View all
-
+    
     private static void viewAllSessions() {
         List<WorkoutSession> sorted = manager.getSessionsSortedByDate();
         if (sorted.isEmpty()) {
@@ -418,8 +413,7 @@ public class Main {
         }
     }
 
-    // ------------------------------------------------------------------ Option 3: By date
-
+    
     private static void viewSessionByDate() {
         String date = readString("Enter date (yyyy-MM-dd): ");
         try {
@@ -430,8 +424,7 @@ public class Main {
         }
     }
 
-    // ------------------------------------------------------------------ Option 4: Filter by type
-
+    
     private static void filterExercisesByType() {
         System.out.println("Filter by type: 1=STRENGTH  2=CARDIO  3=FLEXIBILITY");
         int choice = readInt("> ");
@@ -452,8 +445,7 @@ public class Main {
         }
     }
 
-    // ------------------------------------------------------------------ Option 5: Personal records
-
+    
     private static void viewPersonalRecords() {
         ArrayList<Pair<String, Double>> records = manager.getAllPersonalRecords();
         if (records.isEmpty()) {
@@ -478,27 +470,23 @@ public class Main {
         }
     }
 
-    // ------------------------------------------------------------------ Option 6: Summary
-
+    
     private static void viewSummary() {
         System.out.println(manager.getSummary());
     }
 
-    // ------------------------------------------------------------------ Option 7: Profile
-
+    
     private static void viewUserProfile() {
         System.out.println("\n--- User Profile ---");
         System.out.println(manager.getUser());
     }
 
-    // ------------------------------------------------------------------ Option 8: Export report
-
+    
     private static void exportReport() {
         FileManager.exportReport(manager);
     }
 
-    // ------------------------------------------------------------------ Option 9: Delete from DB
-
+    
     private static void deleteSessionFromDB() {
         String date = readString("Enter date of session to delete (yyyy-MM-dd): ");
         String userName = manager.getUser().getName();
@@ -511,8 +499,7 @@ public class Main {
         }
     }
 
-    // ------------------------------------------------------------------ Input helpers
-
+    
     private static String readString(String prompt) {
         System.out.print(prompt);
         return scanner.nextLine().trim();

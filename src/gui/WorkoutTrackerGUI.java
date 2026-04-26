@@ -36,20 +36,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-/**
- * Phase 7 – Main Swing GUI for the Workout Tracker.
- *
- * Layout:
- *   JFrame
- *   └── header bar (title + user name)
- *   └── JTabbedPane
- *         ├── Dashboard  (DashboardPanel)
- *         ├── Add Workout (AddWorkoutPanel)
- *         ├── History    (HistoryPanel)
- *         ├── Profile    (ProfilePanel)
- *         └── Data & Sync (DataPanel)  – Phases 3-6 file/DB/network ops
- *   └── status bar
- */
+
 public class WorkoutTrackerGUI extends JFrame {
 
     public static ConnectionMode connectionMode = ConnectionMode.DIRECT_DB;
@@ -76,7 +63,7 @@ public class WorkoutTrackerGUI extends JFrame {
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(900, 620));
 
-        // C4: Pre-login report reader
+        
         int reportChoice = JOptionPane.showConfirmDialog(
             null,
             "View your last report before logging in?",
@@ -102,16 +89,16 @@ public class WorkoutTrackerGUI extends JFrame {
             }
         }
 
-        // 1. Ask user for profile and connection mode
+        
         User user = showProfileDialog();
         if (user == null) {
             System.exit(0);
         }
 
-        // 2. Create manager
+        
         manager = new WorkoutManager(user);
 
-        // 3. Auto-load sessions from chosen source
+        
         autoLoad(user.getName());
 
         buildUI();
@@ -120,7 +107,7 @@ public class WorkoutTrackerGUI extends JFrame {
         setSize(1050, 680);
         setLocationRelativeTo(null);
 
-        // 4. Write .bin on clean exit
+        
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent e) {
                 FileManager.saveUserSessions(
@@ -139,7 +126,7 @@ public class WorkoutTrackerGUI extends JFrame {
     private void autoLoad(String userName) {
         boolean connected = false;
 
-        // Step 1: Test connectivity
+        
         if (connectionMode == ConnectionMode.DIRECT_DB) {
             try {
                 Connection conn = DatabaseUtility.getConnection(DB_URL, DB_USER, DB_PASS);
@@ -149,7 +136,7 @@ public class WorkoutTrackerGUI extends JFrame {
                 System.err.println("An error occurred.");
                 e.printStackTrace();
             }
-        } else { // VIA_SERVER
+        } else { 
             try {
                 Socket testSocket = new Socket("localhost", 9876);
                 testSocket.close();
@@ -162,7 +149,7 @@ public class WorkoutTrackerGUI extends JFrame {
         File binFile = new File(FileManager.getUserBinPath(userName));
         long lastSync = FileManager.readSyncTimestamp(userName);
 
-        // C1: Offline sync – if connected and .bin is newer than last sync, push local data first
+        
         if (connected) {
             if (binFile.exists() && binFile.lastModified() > lastSync) {
                 ArrayList<WorkoutSession> binSessions = FileManager.loadUserSessions(userName);
@@ -171,7 +158,7 @@ public class WorkoutTrackerGUI extends JFrame {
                     int pushedCount = 0;
                     if (connectionMode == ConnectionMode.DIRECT_DB) {
                         WorkoutSessionDAO dao = new WorkoutSessionDAO();
-                        // Fetch existing dates to avoid re-inserting already-synced sessions
+                        
                         ArrayList<WorkoutSession> dbSessions = dao.getAllSessions(userName);
                         ArrayList<String> existingDates = new ArrayList<>();
                         for (int i = 0; i < dbSessions.size(); i++) {
@@ -188,8 +175,8 @@ public class WorkoutTrackerGUI extends JFrame {
                                 }
                             }
                         }
-                    } else { // VIA_SERVER
-                        // Fetch existing dates via server to avoid re-inserting already-synced sessions
+                    } else { 
+                        
                         String existingData = WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName);
                         ArrayList<String> existingDates = new ArrayList<>();
                         if (!existingData.equals("NONE") && !existingData.startsWith("ERROR")) {
@@ -235,13 +222,13 @@ public class WorkoutTrackerGUI extends JFrame {
             }
         }
 
-        // Step 2: Normal auto-load
+        
         ArrayList<WorkoutSession> sessions = new ArrayList<>();
         if (connected) {
             if (connectionMode == ConnectionMode.DIRECT_DB) {
                 WorkoutSessionDAO dao = new WorkoutSessionDAO();
                 sessions = dao.getAllSessions(userName);
-            } else { // VIA_SERVER
+            } else { 
                 String response = WorkoutClient.sendAndReceive("GET_SESSIONS:" + userName);
                 if (!response.equals("NONE") && !response.startsWith("ERROR")) {
                     String[] lines = response.split("\n");
@@ -302,8 +289,7 @@ public class WorkoutTrackerGUI extends JFrame {
         }
     }
 
-    // ---------------------------------------------------------------------- UI
-
+    
     private void buildUI() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(AppColors.BG);
@@ -351,7 +337,7 @@ public class WorkoutTrackerGUI extends JFrame {
         tabs.addTab("  Profile  ",    profilePanel);
         tabs.addTab("  Exports  ",      dataPanel);
 
-        // Refresh panels when their tab is selected
+        
         tabs.addChangeListener(e -> {
             int idx = tabs.getSelectedIndex();
             if (idx == 0) dashboardPanel.refresh();
@@ -375,8 +361,7 @@ public class WorkoutTrackerGUI extends JFrame {
         return bar;
     }
 
-    // ---------------------------------------------------------------------- Actions
-
+    
     private void onSessionSaved() {
         refreshAll();
         setStatus("Session saved successfully.");
@@ -399,8 +384,7 @@ public class WorkoutTrackerGUI extends JFrame {
         statusLabel.setText(msg);
     }
 
-    // ---------------------------------------------------------------------- Profile dialog
-
+    
     private User showProfileDialog() {
         while (true) {
             ProfileSetupDialog dlg = new ProfileSetupDialog(this);
@@ -417,25 +401,23 @@ public class WorkoutTrackerGUI extends JFrame {
         }
     }
 
-    // ---------------------------------------------------------------------- Look & Feel
-
+    
     private static void initLookAndFeel() {
-        // Use Metal (cross-platform) L&F so setBackground/setForeground on
-        // JButton work on all platforms including macOS.
+        
+        
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         } catch (Exception e) {
-            // keep default
+            
         }
 
-        // Tab style tweaks
+        
         UIManager.put("TabbedPane.selected",          AppColors.CARD);
         UIManager.put("TabbedPane.background",        AppColors.BG);
         UIManager.put("TabbedPane.contentBorderInsets", new java.awt.Insets(0, 0, 0, 0));
     }
 
-    // ---------------------------------------------------------------------- Entry point
-
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(WorkoutTrackerGUI::new);
     }

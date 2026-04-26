@@ -1,11 +1,6 @@
 package util;
 
-/**
- * Generic implementation of the Pair interface.
- *
- * @param <K> type of the key
- * @param <V> type of the value
- */
+
 public class OrderedPair<K, V> implements Pair<K, V> {
 
     private K key;

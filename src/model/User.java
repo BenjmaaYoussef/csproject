@@ -35,21 +35,19 @@ public class User implements Serializable {
         this.heightCm = heightCm;
     }
 
-    /** Returns Body Mass Index: weight(kg) / height(m)^2 */
+    
     public double getBMI() {
         double heightM = heightCm / 100.0;
         return weightKg / (heightM * heightM);
     }
 
-    // ---------- Getters ----------
-
+    
     public String getName() { return name; }
     public int getAge() { return age; }
     public double getWeightKg() { return weightKg; }
     public double getHeightCm() { return heightCm; }
 
-    // ---------- Setters ----------
-
+    
     public void setName(String name) { this.name = name; }
     public void setAge(int age) { this.age = age; }
     public void setWeightKg(double weightKg) { this.weightKg = weightKg; }

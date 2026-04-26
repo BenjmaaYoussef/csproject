@@ -74,8 +74,7 @@ public class WorkoutClient {
         return response;
     }
 
-    // Builds a pipe-delimited session string matching the FileManager (Phase 3) format.
-    // Format: <userName>\nSESSION|date|notes\nEXERCISE|name|type|sets|reps|weightKg|durationMin\n...
+    
     private static String buildSessionData(Scanner scanner, String userName) {
         System.out.print("Date (yyyy-MM-dd): ");
         String date = scanner.nextLine().trim();

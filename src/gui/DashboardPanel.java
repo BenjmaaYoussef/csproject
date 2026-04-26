@@ -20,9 +20,7 @@ import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Dashboard tab – shows summary stat cards and an exercise-count bar chart.
- */
+
 public class DashboardPanel extends JPanel {
 
     private final WorkoutManager manager;
@@ -41,13 +39,13 @@ public class DashboardPanel extends JPanel {
     }
 
     private void buildUI() {
-        // ---- Title
+        
         JLabel title = new JLabel("Dashboard");
         title.setFont(AppColors.FONT_TITLE);
         title.setForeground(AppColors.TEXT_DARK);
         title.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
 
-        // ---- Stat cards row
+        
         JPanel cardsRow = new JPanel(new GridLayout(1, 3, 16, 0));
         cardsRow.setBackground(AppColors.BG);
         cardsRow.setPreferredSize(new Dimension(0, 110));
@@ -66,7 +64,7 @@ public class DashboardPanel extends JPanel {
         northPanel.add(cardsRow, BorderLayout.CENTER);
         add(northPanel, BorderLayout.NORTH);
 
-        // ---- Center: bar chart
+        
         chartPanel = new BarChartPanel();
         chartPanel.setBackground(AppColors.CARD);
         chartPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -80,7 +78,7 @@ public class DashboardPanel extends JPanel {
         add(scroll, BorderLayout.CENTER);
     }
 
-    /** Creates a colored stat card with a big number and a label underneath. */
+    
     private JPanel statCard(String labelText, JLabel valueLabel, Color accent) {
         JPanel card = new JPanel(new BorderLayout(0, 4));
         card.setBackground(AppColors.CARD);
@@ -116,7 +114,7 @@ public class DashboardPanel extends JPanel {
         return card;
     }
 
-    /** Refreshes all displayed data from the manager. */
+    
     public void refresh() {
         ArrayList<WorkoutSession> sessions = manager.getAllSessions();
 
@@ -134,8 +132,7 @@ public class DashboardPanel extends JPanel {
         chartPanel.repaint();
     }
 
-    // ------------------------------------------------------------------ Inner chart
-
+    
     private static class BarChartPanel extends JPanel {
 
         private List<WorkoutSession> sessions = new ArrayList<>();
@@ -163,7 +160,7 @@ public class DashboardPanel extends JPanel {
             int chartW = w - padLeft - padRight;
             int chartH = h - padBottom - padTop;
 
-            // Title
+            
             g2.setFont(AppColors.FONT_HEADING);
             g2.setColor(AppColors.TEXT_DARK);
             g2.drawString("Exercises per Session", padLeft, padTop - 4);
@@ -175,7 +172,7 @@ public class DashboardPanel extends JPanel {
                 return;
             }
 
-            // Find max exercises count for scaling
+            
             int maxEx = 1;
             for (WorkoutSession s : sessions) {
                 if (s.getExercises().size() > maxEx) {
@@ -183,7 +180,7 @@ public class DashboardPanel extends JPanel {
                 }
             }
 
-            // Draw Y-axis grid lines
+            
             g2.setFont(AppColors.FONT_SMALL);
             int steps = Math.min(maxEx, 5);
             for (int i = 0; i <= steps; i++) {
@@ -197,7 +194,7 @@ public class DashboardPanel extends JPanel {
                 g2.drawString(lbl, padLeft - fm.stringWidth(lbl) - 4, y + fm.getAscent() / 2);
             }
 
-            // Draw bars
+            
             int n = sessions.size();
             int barAreaW = chartW / Math.max(n, 1);
             int barW = Math.max(8, barAreaW - 12);
@@ -210,26 +207,26 @@ public class DashboardPanel extends JPanel {
                 int x    = padLeft + i * barAreaW + (barAreaW - barW) / 2;
                 int y    = padTop + chartH - barH;
 
-                // Pick color by majority type
+                
                 Color barColor = pickColor(s.getExercises());
                 g2.setColor(barColor);
                 g2.fillRoundRect(x, y, barW, barH, 6, 6);
 
-                // Value on top of bar
+                
                 g2.setColor(AppColors.TEXT_DARK);
                 g2.setFont(AppColors.FONT_SMALL);
                 FontMetrics fm = g2.getFontMetrics();
                 String val = String.valueOf(exCount);
                 g2.drawString(val, x + (barW - fm.stringWidth(val)) / 2, y - 4);
 
-                // Date label below axis
+                
                 g2.setColor(AppColors.TEXT_LIGHT);
                 String date = s.getDate().length() >= 10 ? s.getDate().substring(5) : s.getDate();
                 int dateW = fm.stringWidth(date);
                 g2.drawString(date, x + (barW - dateW) / 2, padTop + chartH + 18);
             }
 
-            // X-axis line
+            
             g2.setColor(new Color(0xCCCCCC));
             g2.drawLine(padLeft, padTop + chartH, padLeft + chartW, padTop + chartH);
         }

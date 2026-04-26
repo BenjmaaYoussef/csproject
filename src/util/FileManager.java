@@ -20,21 +20,12 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import model.User;
 
-/**
- * Handles all file I/O for the Workout Tracker app.
- * Phase 3: File Handling using FileWriter and Scanner.
- *
- * File format (workouts.txt):
- *   SESSION|yyyy-MM-dd|notes
- *   EXERCISE|name|type|sets|reps|weightKg|durationMin
- */
+
 public class FileManager {
 
     private static final String USERS_FILE = "users.bin";
 
-    // ------------------------------------------------------------------ Per-user binary save/load
-
-    /** Returns the binary filename for a given user's sessions. */
+    
     private static String userSessionFile(String userName) {
         return "workouts_" + userName.replaceAll("\\s+", "_") + ".bin";
     }
@@ -83,8 +74,7 @@ public class FileManager {
         return sessions;
     }
 
-    // ------------------------------------------------------------------ User list save/load
-
+    
     public static void saveUsers(ArrayList<User> users) {
         ObjectOutputStream os = null;
         try {
@@ -127,12 +117,7 @@ public class FileManager {
         return users;
     }
 
-    // ------------------------------------------------------------------ Parse session from text
-
-    /**
-     * Parses a pipe-delimited session block into a WorkoutSession.
-     * Format: SESSION|date|notes\nEXERCISE|name|type|sets|reps|weightKg|durationMin\n...
-     */
+    
     public static WorkoutSession parseSessionFromText(String data) {
         String[] lines = data.split("\n");
         WorkoutSession session = null;
@@ -166,19 +151,17 @@ public class FileManager {
         return session;
     }
 
-    // ------------------------------------------------------------------ Sync timestamp
-
-    /** Returns the sync-timestamp filename for a given user. */
+    
     private static String userSyncFile(String userName) {
         return "sync_" + userName.replaceAll("\\s+", "_") + ".txt";
     }
 
-    /** Returns the binary filename for external callers (e.g. to check lastModified). */
+    
     public static String getUserBinPath(String userName) {
         return "workouts_" + userName.replaceAll("\\s+", "_") + ".bin";
     }
 
-    /** Writes the current time (ms) to sync_<userName>.txt. */
+    
     public static void saveSyncTimestamp(String userName) {
         String path = userSyncFile(userName);
         FileWriter writer = null;
@@ -196,7 +179,7 @@ public class FileManager {
         }
     }
 
-    /** Reads the last sync timestamp from sync_<userName>.txt; returns 0 if absent. */
+    
     public static long readSyncTimestamp(String userName) {
         String path = userSyncFile(userName);
         File file = new File(path);
@@ -218,14 +201,12 @@ public class FileManager {
         return 0;
     }
 
-    // ------------------------------------------------------------------ Report reading
-
-    /** Returns the report filename for a given user. */
+    
     private static String userReportFile(String userName) {
         return "report_" + userName.replaceAll("\\s+", "_") + ".txt";
     }
 
-    /** CLI use: reads report_<userName>.txt and prints each line to System.out. */
+    
     public static void readAndPrintReport(String userName) throws WorkoutAppException {
         File file = new File(userReportFile(userName));
         if (!file.exists()) {
@@ -243,7 +224,7 @@ public class FileManager {
         }
     }
 
-    /** GUI use: reads report_<userName>.txt and returns contents as a String. */
+    
     public static String readReport(String userName) throws WorkoutAppException {
         File file = new File(userReportFile(userName));
         if (!file.exists()) {
@@ -263,11 +244,7 @@ public class FileManager {
         return sb.toString();
     }
 
-    // ------------------------------------------------------------------ Export report
-
-    /**
-     * Exports a readable workout history report to report_<name>.txt.
-     */
+    
     public static void exportReport(WorkoutManager manager) {
         String path = userReportFile(manager.getUser().getName());
         FileWriter writer = null;

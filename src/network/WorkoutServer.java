@@ -78,7 +78,7 @@ public class WorkoutServer {
             }
             return sb.toString();
         } else if (command.startsWith("ADD_SESSION:")) {
-            // Format: ADD_SESSION:<userName>\n<session data>
+            
             String payload = command.substring("ADD_SESSION:".length());
             int newline = payload.indexOf('\n');
             if (newline < 0) {

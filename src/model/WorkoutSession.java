@@ -24,10 +24,7 @@ public class WorkoutSession implements Comparable<WorkoutSession>, Serializable 
         this.exercises = new ArrayList<>();
     }
 
-    /**
-     * Adds an exercise to this session.
-     * @throws DuplicateExerciseException if an exercise with the same name already exists
-     */
+    
     public void addExercise(Exercise e) throws DuplicateExerciseException {
         for (Exercise existing : exercises) {
             if (existing.getName().equalsIgnoreCase(e.getName())) {
@@ -37,9 +34,7 @@ public class WorkoutSession implements Comparable<WorkoutSession>, Serializable 
         exercises.add(e);
     }
 
-    /**
-     * Removes an exercise by name (case-insensitive). No-op if not found.
-     */
+    
     public void removeExercise(String name) {
         exercises.removeIf(e -> e.getName().equalsIgnoreCase(name));
     }
@@ -58,7 +53,7 @@ public class WorkoutSession implements Comparable<WorkoutSession>, Serializable 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
-    /** Natural order: chronological by date string (yyyy-MM-dd sorts correctly lexicographically). */
+    
     @Override
     public int compareTo(WorkoutSession other) {
         return this.date.compareTo(other.date);
