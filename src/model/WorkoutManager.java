@@ -12,14 +12,12 @@ import java.util.List;
 public class WorkoutManager {
 
     private final ArrayList<WorkoutSession> sessions;
-    private final ArrayList<Exercise> exerciseLibrary;
     private final ArrayList<Pair<String, Double>> personalRecords;
     private User user;
 
     public WorkoutManager(User user) {
         this.user = user;
         this.sessions = new ArrayList<>();
-        this.exerciseLibrary = new ArrayList<>();
         this.personalRecords = new ArrayList<>();
     }
 
@@ -55,33 +53,7 @@ public class WorkoutManager {
         return sorted;
     }
 
-    
-    public void addToLibrary(Exercise exercise) {
-        for (int i = 0; i < exerciseLibrary.size(); i++) {
-            if (exerciseLibrary.get(i).getName().equalsIgnoreCase(exercise.getName())) {
-                exerciseLibrary.set(i, exercise);
-                return;
-            }
-        }
-        exerciseLibrary.add(exercise);
-    }
 
-    
-    public Exercise getFromLibrary(String name) {
-        for (Exercise e : exerciseLibrary) {
-            if (e.getName().equalsIgnoreCase(name)) {
-                return e;
-            }
-        }
-        return null;
-    }
-
-    
-    public ArrayList<Exercise> getExerciseLibrary() {
-        return exerciseLibrary;
-    }
-
-    
     public List<Exercise> filterExercisesByType(ExerciseType type) {
         ArrayList<Exercise> result = new ArrayList<>();
         for (WorkoutSession session : sessions) {

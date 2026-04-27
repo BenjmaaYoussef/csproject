@@ -34,11 +34,6 @@ public class WorkoutSession implements Comparable<WorkoutSession>, Serializable 
         exercises.add(e);
     }
 
-    
-    public void removeExercise(String name) {
-        exercises.removeIf(e -> e.getName().equalsIgnoreCase(name));
-    }
-
     public ArrayList<Exercise> getExercises() {
         return exercises;
     }
